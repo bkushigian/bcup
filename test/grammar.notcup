@@ -1,0 +1,13 @@
+nonterminal Expr S
+nonterminal Expr E
+nonterminal Expr T
+
+terminal    ID
+terminal    NUM
+terminal    ADD
+
+S ::=  E
+E ::=  T
+   |   T ADD E
+T ::= ID
+   |  NUM
