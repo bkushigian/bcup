@@ -214,7 +214,7 @@ class Terminal(Symbol):
         if self in self.symbolSet:
             print "*** ERROR - {} already created".format(self)
         self.symbolSet.add(self)
-        self.firsts   = []
+        self.firsts   = [self]
         self.follows  = []
 
     def add_to_follow(self, f):

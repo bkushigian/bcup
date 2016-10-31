@@ -58,8 +58,12 @@ class State(object):
     def closure(self):
         closure = set()
         closure.update(self.kernel)
-        # print "KERNEL: ", self.kernel
+        print "="*80
+        print "CLOSURE()"
+        print "KERNEL: ", self.kernel
+        print "="*80
         while True:
+            print "="*80
             updated = False
             # print
             # print
@@ -68,33 +72,54 @@ class State(object):
 
             for item in closure:
                 p, n, f = item.production, item.position, item.follows
-            
-                if n >= len(p.rhs):      # Production of form A -> alpha beta (*)
+                print (' ' * 5) +  ('-'*70 ) + (' ' * 5)
+                print 
+                print "p = {}, n = {}, f = {}".format(p,n,f)
+                if n >= len(p.rhs):
                     continue
                 next_symbol = p.rhs[n]
-                # print "NEXT SYMBOL:", next_symbol, type(next_symbol)
-                # print "PRODUCTIONS:", self.productions
-                if isinstance(next_symbol, NonTerminal):
-                    # Get collection of productions starting with next_symbol
-                    prods = self.productions.get_productions_for(next_symbol)
-                    prods = set([Item(x, 0, self.productions) for x in prods])
-                    # print "PRODS : ", prods
-                    # print "NEW CL: ", new_closure
-                    # print "PRODS C NEW CLOSURE:", prods.issubset(new_closure)
-                    if not prods.issubset(new_closure):
-                        updated = True
-                        new_closure.update(prods)
-                # print "UPDATED    :", updated
-                # print "CLOSURE    :", closure
-                # print "NEW CLOSURE:", new_closure
-                # print "NEW CLOSURE == CLOSURE: ", new_closure == closure
-                # print 
-                        
-            closure = new_closure
+                print 
+                print "NEXT SYMBOL:", next_symbol, type(next_symbol)
+                print "PRODUCTIONS:\n", self.productions
+                print 
 
+                if not isinstance(next_symbol, NonTerminal):
+                    print "    CONINUING..."
+                    continue
+                for prod in self.productions.get_productions_for(next_symbol):
+                    print "    PROD   :", prod
+                    for a in f:
+                        print "        a       :", a
+                        print "        FIRST(a):", a.firsts
+                        new_item = Item(prod, 0, self.productions)
+                        inp = list(p.rhs[n+1:]) + [a]
+                        fos = self.productions.firsts_of_string(list(p.rhs[n+1:]) + [a])
+                        print "        FRST STR:", fos
+                        for b in self.productions.firsts_of_string(list(p.rhs[n+1:]) + [a]):
+                            print "            b       :", b
+                            new_item.add_follow(b)
+                        print "        NEW ITEM:", new_item
+                        if new_item not in new_closure:
+                            print "        ADD ITEM:", new_item
+                            updated = True
+                            new_closure.add(new_item)
+
+                print "UPDATED    :", updated
+                print "CLOSURE    :", closure
+                print "NEW CLOSURE:", new_closure
+                print "NEW CLOSURE == CLOSURE: ", new_closure == closure
+                print 
+                raw_input('> ')
+            closure = new_closure
             if not updated:
                 break
         self.items = frozenset(list(closure))
+
+    def print_details(self):
+        s = "State {}\n    ".format(self.state_num)
+        s += '\n    '.join([str(i) for i in self.items])
+        print s
+
 
     def __eq__(self, other):
         return self.items == other.items
@@ -106,8 +131,7 @@ class State(object):
         return hash(self.items)
 
     def __repr__(self):
-        s = "State {}\n    ".format(self.state_num)
-        s += '\n    '.join([str(i) for i in self.items])
+        s = "State({})".format(self.state_num)
         return s
 
 class Item(object):
@@ -126,7 +150,7 @@ class Item(object):
         return self.production.rhs[self.position]
     
     def add_follow(self, follow):
-        self.follows.append(f)
+        self.follows.append(follow)
 
     def add_follows(self, follows):
         for f in follows:
@@ -135,17 +159,24 @@ class Item(object):
     def shift(self):
         ''' Returns a copy of Item, shifted by 1 if valid, None otherwise.'''
         if self.position < len(self.production.rhs):
-            return Item(self.production, self.position + 1, self.productions)
+            i = Item(self.production, self.position + 1, self.productions)
+            i.follows = self.follows
+            return i
         return None
 
     def __eq__(self, other):
-        return self.production == other.production and self.position == other.position
+        return self.production == other.production and self.position == other.position and self.follows == other.follows
 
     def __hash__(self):
-        return hash((self.production, self.position))
+        return hash((self.production, self.position, tuple(self.follows) ))
 
     def __repr__(self):
-        return "Item({},{},{})".format(self.production.num, self.production, self.position)
+        rhs = list(self.production.rhs)
+        left_strs = [str(t) for t in rhs[:self.position]]
+        right_strs = [str(t) for t in rhs[self.position:]]
+        s = ' '.join(left_strs + ['(*)'] + right_strs)
+        return "Item({}: {} ==> {}, {})".format(self.production.num,
+                            self.production.lhs,s, self.follows)
 
 
 class StateMachine(object):
@@ -176,18 +207,15 @@ class StateMachine(object):
 
         print "STATE MACHINE:"
         for s in self.states:
-            print s
+            s.print_details()
         print
         print "GOTO TABLE"
         for key in self.goto.keys():
-            print 
-            print key[0]
-            print key[1]
-            print "-->", self.goto[key]
-            print 
+            print (key[0], key[1]) ,"-->", self.goto[key]
 
     def gen_state(self, state):
         print "    GEN STATE:", self.number_of_states
+        raw_input("> ")
         transfer_state_map = {} # Set of symbols to transfer on
 
         # Get symbols to transfer on, and corresponding production numbers
@@ -208,6 +236,7 @@ class StateMachine(object):
             print "SYMBOL:", symbol
             if symbol is None:
                 continue
+            raw_input('CREATING NEW STATE > ')
             s = State(transfer_state_map[symbol], -1) # Create a new state
             if s not in self.state_set:
                 self.number_of_states += 1
