@@ -1,5 +1,6 @@
 # bcup
 An LR(1) Parser Generator written in Python
+
 *bcup:* Supporting your grammars since last night
 
 ## Stuff
