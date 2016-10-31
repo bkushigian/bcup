@@ -1,6 +1,7 @@
-from src.generator import MetaParser
+from src.metaparser import MetaParser
 from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
 from src.symbols import Terminal, NonTerminal, Production
+from src.statemachine import Item, State, StateMachine
 
 with open("test/grammar.notcup") as f:
     grammar = f.read()
@@ -38,3 +39,28 @@ print
 while s:
     print s," --> ", mp.firsts_of_string(s)
     s = s[1:]
+
+mp.compute_follows()
+follows = mp.productions.follows
+print " === FOLLOWS === "
+for key in follows:
+    if isinstance(key, Terminal):
+        continue
+    s = "FOLLOWS({}) = {{".format(key)
+    for val in follows[key]:
+        s += "{}, ".format(val)
+    print s + "}"
+
+print 
+print " === PRODUCTION NUMBERS === "
+productions = mp.productions
+for i in range(len(productions.productions)):
+    print i, productions.productions[i]
+
+print 
+print " === TESTING STATE MACHINE ==="
+
+sm = StateMachine(mp.terminals.values(), mp.nonterminals.values(), productions)
+print sm
+
+sm.generate_states()

@@ -1,5 +1,6 @@
 from src.helper import accumulator
-from src.symbols import Symbol, Terminal, NonTerminal, Productions
+from src.symbols import ( Symbol, Terminal, NonTerminal, 
+                          Productions, startSymbol, terminalEOF)
 
 class MetaParser(object):
     def __init__(self, grammar_string, lexer):
@@ -10,31 +11,36 @@ class MetaParser(object):
             grammar_string: The string literal to parse
             tokens: map of token names to their corresponding class constructors.
             '''
-        lines             = iter(grammar_string.split('\n'))
-        self.terminals    = {}
+        self.grammar_string = grammar_string    # String literal with grammar
+        self.terminals    = {}                
         self.nonterminals = {}
         self.lexer        = lexer
         self.token_map    = lexer.token_map
         self.productions  = Productions()
         Symbol.set_productions(self.productions)
 
-        startSymbol = NonTerminal("START", "PROG")
-        terminalEOF = Terminal("$")
         self.nonterminals["START"] = startSymbol
         self.terminals['$'] = terminalEOF
-        foundStart = False
+        self.setup()
 
+    def setup(self):
+        ''' 
+        This is an unwieldly beast. It's just a big loop that does stuff.
+        Peruse at your own risk.
+        '''
+        foundStart = False    # We want to find the start symbol
+        lines = iter(self.grammar_string.split('\n'))
         for line in lines:
-            # print "line = {}".format(line)
             if line.strip().startswith('#'):
                 continue        # COMMENT
             elif "nonterminal" in line:
                 terms = line.split()
                 assert len(terms) == 3
                 assert terms[0] == 'nonterminal'
+
                 tp   = terms[1]
                 name = terms[2]
-                # print "NONTERMINAL: {} {}".format(tp, name)
+
                 assert name not in self.nonterminals, "nonterminal {} already declared".format(name)
                 assert name not in self.terminals,    "terminal {} is already declared".format(name)
                 self.nonterminals[name] = NonTerminal(name, tp)
@@ -44,7 +50,6 @@ class MetaParser(object):
                 assert len(terms) == 2
                 assert terms[0] == 'terminal'
                 name = terms[1]
-                # print "TERMINAL: {}".format( name)
                 assert name in self.token_map,        "no lexer token by this name"
                 assert name not in self.nonterminals, "nonterminal {} already declared".format(name)
                 assert name not in self.terminals,    "terminal {} is already declared".format(name)
@@ -69,7 +74,7 @@ class MetaParser(object):
                         if not foundStart:
                             print "FOUND START!"
                             foundStart = True
-                            startSymbol.add_production([current_nt, terminalEOF])
+                            startSymbol.add_production([current_nt])
                         rhs = map(self.str_to_symbol, list(terms[2:]))
 
                         current_production = current_nt.add_production( rhs )
@@ -113,6 +118,8 @@ class MetaParser(object):
 
     def compute_firsts(self):
         self.productions.compute_firsts()
+    def compute_follows(self):
+        self.productions.compute_follows()
 
     def firsts_of_string(self, symstr):
         return self.productions.firsts_of_string(symstr)

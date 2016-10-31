@@ -7,6 +7,7 @@ class Production(object):
         self.lhs = lhs
         self.rhs = tuple(rhs)
         self.code = ""
+        self.num = -1
 
     def add_code(self, code):
         self.code = code
@@ -25,22 +26,29 @@ class Productions(object):
         # XXX: There is a lot of duplication of info here.
         self.production_map  = {}   # A map from nonterms to a list of prods
         self.keys            = []   # Keep the keys ordered, these are NTs
-        self.production_nums = {}   # A map from productions to their numbers
         self.productions     = []   # A list of productions
         self.accum = accumulator(0) # Keep track of production numbers
         self.terminals       = set()
-
+    
     def add_production(self, prod):
 
         if prod.lhs not in self.production_map:
             self.keys.append(prod.lhs)
             self.production_map[prod.lhs] = []
         self.production_map[prod.lhs].append(prod.rhs)
-        self.production_nums[prod] = self.accum.next()
+        prod.num = self.accum.next()
         self.productions.append(prod)
         for sym in prod.rhs:
             if isinstance(sym, Terminal):
                 self.terminals.add(sym)
+
+    def get_productions_for(self, nt):
+        assert isinstance(nt, NonTerminal), "Can't get productions for terminals"
+        result = set()
+        for p in self.productions:
+            if nt == p.lhs:
+                result.add(p)
+        return result
 
     def compute_firsts(self):
         ''' Go through all productions, compute first and follows '''
@@ -52,7 +60,7 @@ class Productions(object):
             firsts[term].add(term)
 
         while True:
-            update = False    # Have we updated firsts?
+            updated = False     # Have we updated firsts?
             # Loop thru nonterminals, add first sets
             for prod in self.productions:
                 rhs = prod.rhs  # Get the RHS of the production
@@ -61,18 +69,18 @@ class Productions(object):
                 if not rhs:  # TODO: Update with emptyString
                     if emptyString not in firsts[lhs]:
                         firsts[lhs].add(emptyString)
-                        update = True
+                        updated = True
                     continue
                 for X in rhs:
                     for f in firsts[X]: 
                         if f not in firsts[lhs]:
-                            update = True
+                            updated = True
                             firsts[lhs].add(f)
                     if emptyString not in firsts[X]:
                         # There is no empty string in firsts[X], so we break.
                         # Otherwise, continue adding to firsts
                         break
-            if not update:
+            if not updated:
                 break
         self.firsts = firsts
 
@@ -80,30 +88,109 @@ class Productions(object):
         for symbol in self.keys + list(self.terminals):
             symbol.firsts = firsts[symbol]
                         
-    def firsts_of_string(self, symstr):
+    def firsts_of_string(self, symstr, remove_empty_string = False):
         firsts = set()
         for sym in symstr:
             firsts.update(sym.firsts)
             if emptyString not in sym.firsts:
-                return firsts
+                break
+        if remove_empty_string and emptyString in firsts:
+            firsts.remove(emptyString)
+        return firsts
+
+    def follows_of_string(self, symstr, remove_empty_string = False):
+        follows = set()
+        for sym in symstr:
+            follows.update(sym.follows)
+            if emptyString not in sym.follows:
+                break
+        if remove_empty_string and emptyString in follows:
+            follows.remove(emptyString)
+        return follows
+
+    def can_be_empty(self, lhs):
+        for term in lhs:
+            if emptyString not in term.firsts:
+                return False
+        return True
 
     def compute_follows(self):
+        ''' 
+        Compute the follow sets for nonterminal A. From Aho, for nonterminal
+        A we define FOLLOW(A) := { t : t is TERMINAL, there is a sentential form
+        alpha A t beta}. That is, it is the set of terminals that can directly
+        follow A in some sentential form.
+        '''
         follows = {}
         for key in self.keys:     # Initialize these to empty
             follows[key] = set()
         for term in self.terminals:
             follows[term] = set()
-        follows[startSymbol].update(self.terminals['EOF'])
+        follows[startSymbol].add(terminalEOF)
+        
+        productions = self.productions
+        while True:   # Fixed Point Algorithm
+            updated = False
+            # Loop through productions, using the following rules
+            # from Aho:
+            # 2) If A -> alpha B beta is a right sentential form:
+            #         follows(B) += first(beta) - emptyString
+            # 3) If A -> alpha B:
+            #         follows(B) += follows(A)  
 
-        update = False
-        pass
+            print 
+            print "TOP OF WHILE"
+            for prod in productions:
+                A, rhs = prod.lhs, prod.rhs
+
+                # Loop through rhs
+                for i in range(len(rhs)):
+                    B = rhs[i]
+                    if isinstance(B, Terminal):
+                        continue
+
+                    right_productions = rhs[i+1:]
+
+                    print 
+                    print "    PRODUCTION     :", prod
+                    print "        TERM       :", B
+                    print "        RIGHT PRODS:", right_productions
+
+                    if right_productions:   # There are terms following term
+                                            # Use Rule (1)
+                        firsts_of_right_productions = self.firsts_of_string(right_productions, True)
+                        print "        FIRST OF RP:", firsts_of_right_productions
+                        if not firsts_of_right_productions.issubset(follows[B]):
+                            updated = True
+                            follows[B].update(firsts_of_right_productions)
+                        if self.can_be_empty(rhs[i+1:]):
+                            print "            CAN BE EMPTY"
+                            if not follows[A].issubset(follows[B]):
+                                updated = True
+                                follows[B].update(follows[A])
+
+                    else:           # There are no terms following term
+                                    # Use Rule (2)
+                        print "        FOLLOWS(A) :", follows[A]
+                        print "        FOLLOWS(B) :", follows[B]
+                        if not follows[A].issubset(follows[B]):
+                            print "            UPDATING BY RULE 2"
+                            updated = True
+                            follows[B].update(follows[A])
+                            if emptyString in follows[B]:
+                                follows[B].remove(emptyString)
+                    print "        FOLLOWS    :", follows[B]
+
+            if not updated:
+                self.follows = follows
+                break
+
 
     def __repr__(self):
         # XXX: This is kind of hacky...
         s = ""
         accum = accumulator(1)
         for key in self.keys:
-            print "type of key = ", type(key)
             if s:
                 s += '\n'
             s += "({}) {} ::= {}".format(accum.next(), key,
@@ -137,7 +224,7 @@ class Terminal(Symbol):
         self.first.append(f)
 
     def __eq__(self, other):
-        return self.name == other.name
+        return isinstance(other, Terminal) and self.name == other.name
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -151,14 +238,16 @@ class Terminal(Symbol):
 
 class NonTerminal(Symbol):
     def __init__(self, name, tp):
-        self.my_prods = []
-        self.name     = name
-        self.type     = tp
+        self.my_prods = []      # Local Productions: self -> alpha
+        self.name     = name    # Name of nonterminal, specified by grammar
+        self.type     = tp      # Type of nonterminal, specified by grammar
+
         if self in self.symbolSet:
             print "*** ERROR - {} already created".format(self)
+
         self.symbolSet.add(self)
-        self.firsts   = []
-        self.follows  = []
+        self.firsts   = []     # FIRST(self)
+        self.follows  = []     # FOLLOW(self)
 
     def add_to_follow(self, f):
         self.follow.append(f)
@@ -172,7 +261,8 @@ class NonTerminal(Symbol):
         return self.my_prods[-1]
 
     def __eq__(self, other):
-        return self.name == other.name and self.tp == other.tp
+        return isinstance(other,NonTerminal) and self.name == other.name and self.type == other.type
+
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -183,5 +273,6 @@ class NonTerminal(Symbol):
         return "<{} {}>".format(self.type, self.name)
 
 
+startSymbol = NonTerminal("START", "PROG")
+terminalEOF = Terminal("$")
 emptyString = Terminal("EMPTY")
-
