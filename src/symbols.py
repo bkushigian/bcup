@@ -229,6 +229,10 @@ class Symbol(object):
     productions = None
     @staticmethod
     def set_productions(prod):
+        ''' This allows all classes derived from Symbol to see the full set of
+        productions.
+        '''
+
         Symbol.productions = prod
 
     def is_terminal(self):

@@ -1,3 +1,8 @@
+''' lexer.py has the base Lexer class, as well as Token and Token* subclasses.
+These are filler classes for tests and can (should) be overridden.
+This lexer class is the default for parsing a grammar and can be extended to
+parse different forms of grammars.'''
+
 class Token(object):
     def __init__(self, value=None):
         self.name = None
@@ -57,7 +62,8 @@ class Lexer(object):
     ''' Trivial lexer, can be overridden, this adds id's and nums'''
     def __init__(self, program = None):
         self.program = program
-        self.token_map = {"NUM" : TokenNum, "ID" : TokenId, "ADD" : TokenBinOpAdd, "EOF" : TokenEOF }
+        self.token_map = {"NUM" : TokenNum, "ID" : TokenId, 
+                "ADD" : TokenBinOpAdd, "EOF" : TokenEOF }
         if self.program:
             self.lex()
 
@@ -65,6 +71,10 @@ class Lexer(object):
         self.program = program
 
     def lex(self):
+        ''' This splits the input file into strings. This should be overridden
+        for any grammars as it presupposes that the grammar is white-space
+        seperated.
+        '''
         tokens = []
         print "LEX: PROGRAM =", self.program
         raw_input()
@@ -83,7 +93,11 @@ class Lexer(object):
         self.tokens = iter(tokens)
 
     def next(self):
+        ''' If lex is overridden, this needs to be rewritten to. This is the
+        main function defined for the Lexer class and is how the outside world
+        talks to it.
+        '''
         return self.tokens.next()
 
-tokenEOF = TokenEOF()
+tokenEOF = TokenEOF()    # A Cannonical EOF token
                 

@@ -3,6 +3,7 @@ from src.symbols import ( Symbol, Terminal, NonTerminal,
                           Productions, startSymbol, terminalEOF)
 
 class MetaParser(object):
+    ''' Meta Parser is responsible for parsing the grammar.'''
     def __init__(self, grammar_string, lexer, augment_grammar = True):
         ''' Assumes that everything is white space seperated,
             Comments on their own line (starting with '#').
@@ -12,25 +13,54 @@ class MetaParser(object):
             tokens: map of token names to their corresponding class constructors.
             augment_grammar: Should we add extra start symbol? Yes for LR, no 
                 for LL.
-            '''
+        '''
         self.grammar_string = grammar_string    # String literal with grammar
         self.augment_grammar = augment_grammar  # Should we create extra start sym?
-        self.terminals    = {}                
-        self.nonterminals = {}
-        self.lexer        = lexer
-        self.token_map    = lexer.token_map
+        self.terminals    = {}                  # Map strings to nonterminals
+        self.nonterminals = {}                  # Map strings to terminals
+        self.lexer        = lexer               # The grammar lexer
+        self.token_map    = lexer.token_map     # Map strings to tokens
+
         self.productions  = Productions(self.augment_grammar)
-        Symbol.set_productions(self.productions)
+
+        Symbol.set_productions(self.productions)    # Allow all Symbol classes
+                                                    # (including Token*) to have
+                                                    # access to all productions
         
+        # XXX: This is working (for now). 
+        # TODO: Clean these lines up
         if augment_grammar:
             self.nonterminals["START"] = startSymbol
             self.start = startSymbol
         else:
             self.start = None
+
         self.terminals['$'] = terminalEOF
         self.setup()
 
     def setup(self):
+        ''' Must be called exactly once. Called by __init__ '''
+        self._parse_grammar()
+        self.compute_firsts()
+        self.compute_follows()
+
+    def str_to_symbol(self, sym):
+        if sym in self.terminals:
+            return self.terminals[sym]
+        if sym in self.nonterminals:
+            return self.nonterminals[sym]
+        assert False, "sym: {} - not in any table".format(sym)
+
+    def compute_firsts(self):
+        self.productions.compute_firsts()
+
+    def compute_follows(self):
+        self.productions.compute_follows(self.start)
+
+    def firsts_of_string(self, symstr):
+        return self.productions.firsts_of_string(symstr)
+
+    def _parse_grammar(self):
         ''' 
         This is an unwieldly beast. It's just a big loop that does stuff.
         Peruse at your own risk.
@@ -82,7 +112,6 @@ class MetaParser(object):
                         
                         #  Found the START symbol
                         if not foundStart:
-                            print "FOUND START!"
                             foundStart = True
                             if self.augment_grammar:
                                 self.start = startSymbol
@@ -99,6 +128,7 @@ class MetaParser(object):
                         current_production = current_nt.add_production( rhs )
 
                     elif terms[0] == '{:':
+                        # TODO: Check this
                         # Rules for code gen, add to current_production
                         code = ""
                         while True:         # Get code for production
@@ -110,6 +140,7 @@ class MetaParser(object):
                                 code += line
 
                             except:
+                                # TODO: Add debug error
                                 print "Parse Error!"
                                 break
                     else:
@@ -123,24 +154,8 @@ class MetaParser(object):
                         continue
                     except:
                         break
-        self.compute_firsts()
-        self.compute_follows()
 
-    def str_to_symbol(self, sym):
-        if sym in self.terminals:
-            return self.terminals[sym]
-        if sym in self.nonterminals:
-            return self.nonterminals[sym]
-        assert False, "sym: {} - not in any table".format(sym)
 
-    def compute_firsts(self):
-        self.productions.compute_firsts()
-
-    def compute_follows(self):
-        self.productions.compute_follows(self.start)
-
-    def firsts_of_string(self, symstr):
-        return self.productions.firsts_of_string(symstr)
                         
 
 
