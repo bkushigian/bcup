@@ -1,9 +1,10 @@
 from src.helper import accumulator, stop
 from src.lexer import Token
 
-
-
 class Production(object):
+    ''' The production class holds a single grammar production, along with some
+    meta information (such as the production number) and the associated code
+    string that will build the parse tree.'''
     def __init__(self, lhs, rhs):
         assert isinstance(lhs, NonTerminal), "lhs {} not an instance of NonTerminal".format(lhs)
         self.lhs = lhs
@@ -24,6 +25,8 @@ class Production(object):
         return hash((self.lhs,self.rhs))
 
 class Productions(object):
+    ''' The Productions class holds the collection of productions associated
+    with a grammar. This could also maybe be named the Grammar class.'''
     def __init__(self, augment_grammar):
         # XXX: There is a lot of duplication of info here.
         self.production_map  = {}   # A map from nonterms to a list of prods
@@ -35,12 +38,15 @@ class Productions(object):
         self.start           = None
     
     def add_start(self, start):
+        ''' Update with a start symbol. At the time of reading a grammar we
+        don't know if we want to augment it or not. This should probably be
+        fixed at some point.'''
         self.start = start
         self.nonterminals.append(self.start)
         
-
     def add_production(self, prod):
-
+        ''' Add a newly read production. This should be called from the
+        MetaParser class. '''
         if prod.lhs not in self.production_map:
             self.nonterminals.append(prod.lhs)
             self.production_map[prod.lhs] = []
@@ -52,6 +58,7 @@ class Productions(object):
                 self.terminals.add(sym)
 
     def get_productions_for(self, nt):
+        ''' Return a set of all productions for nonterminal `nt`. '''
         assert isinstance(nt, NonTerminal), "Can't get productions for terminals"
         result = set()
         for p in self.productions:
@@ -60,7 +67,7 @@ class Productions(object):
         return result
 
     def compute_firsts(self):
-        ''' Go through all productions, compute first and follows '''
+        ''' Go through all productions, compute first and follows. '''
         firsts = {}
         for key in self.nonterminals:     # Initialize these to empty
             firsts[key] = set()
@@ -98,6 +105,7 @@ class Productions(object):
             symbol.firsts = firsts[symbol]
                         
     def firsts_of_string(self, symstr, remove_empty_string = False):
+        ''' Compute the FIRST set of a string X_1 X_2 X_3 ... X_n'''
         firsts = set()
         if len(symstr) == 0 and not remove_empty_string:
             firsts.add(emptyString)
@@ -111,7 +119,10 @@ class Productions(object):
             firsts.remove(emptyString)
         return firsts
 
+    # TODO: What does this do?
     def follows_of_string(self, symstr, remove_empty_string = False):
+        ''' Compute the FOLLOW set of a string - might not be used (or correctly
+        defined). If I'm being honest, I have no idea how it got here...'''
         follows = set()
         for sym in symstr:
             follows.update(sym.follows)
@@ -122,6 +133,8 @@ class Productions(object):
         return follows
 
     def can_be_empty(self, lhs):
+        ''' Determine if a non-terminal can derive the empty string. '''
+        # TODO: Memoize?
         for term in lhs:
             if emptyString not in term.firsts:
                 return False
@@ -146,15 +159,6 @@ class Productions(object):
         productions = self.productions
         while True:   # Fixed Point Algorithm
             updated = False
-            # Loop through productions, using the following rules
-            # from Aho:
-            # 2) If A -> alpha B beta is a right sentential form:
-            #         follows(B) += first(beta) - emptyString
-            # 3) If A -> alpha B:
-            #         follows(B) += follows(A)  
-
-            print 
-            print "TOP OF WHILE"
             for prod in productions:
                 A, rhs = prod.lhs, prod.rhs
 
@@ -163,44 +167,27 @@ class Productions(object):
                     B = rhs[i]
                     if isinstance(B, Terminal):
                         continue
-
                     right_productions = rhs[i+1:]
-
-                    print 
-                    print "    PRODUCTION     :", prod
-                    print "        TERM       :", B
-                    print "        RIGHT PRODS:", right_productions
-
                     if right_productions:   # There are terms following term
                                             # Use Rule (1)
                         firsts_of_right_productions = self.firsts_of_string(right_productions, True)
                         if emptyString in firsts_of_right_productions:
-                            print "        FIRSTS OF RIGHT :", firsts_of_right_productions
-                            stop(" [!] EMPTY STRING!!! ")
                             firsts_of_right_productions.remove(emptyString)
-                        print "        FIRST OF RP:", firsts_of_right_productions
                         if not firsts_of_right_productions.issubset(follows[B]):
                             updated = True
                             follows[B].update(firsts_of_right_productions)
                         if self.can_be_empty(rhs[i+1:]):
-                            print "            CAN BE EMPTY"
                             if not follows[A].issubset(follows[B]):
                                 updated = True
                                 follows[B].update(follows[A])
 
                     else:           # There are no terms following term
                                     # Use Rule (2)
-                        print "        FOLLOWS(A) :", follows[A]
-                        print "        FOLLOWS(B) :", follows[B]
                         if not follows[A].issubset(follows[B]):
-                            print "            UPDATING BY RULE 2"
                             updated = True
                             follows[B].update(follows[A])
                             if emptyString in follows[B]:
-                                print " [!] EMPTY STRING!!!"
                                 follows[B].remove(emptyString)
-                    print "        FOLLOWS    :", follows[B]
-                    stop(' [!] Is there an empty string? > ')
 
             if not updated:
                 self.follows = follows
@@ -230,9 +217,7 @@ class Symbol(object):
     @staticmethod
     def set_productions(prod):
         ''' This allows all classes derived from Symbol to see the full set of
-        productions.
-        '''
-
+        productions. This will be necessary during the parse. '''
         Symbol.productions = prod
 
     def is_terminal(self):

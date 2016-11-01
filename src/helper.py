@@ -9,6 +9,7 @@ breaknum = 1
 DEBUG = False
 
 def stop(message = None):
+    ''' A make-shift poor mans debugger. Don't use, k?'''
     global breaknum, CONTINUE, CONTINUE_WHEN
     if not DEBUG:
         return
@@ -35,7 +36,9 @@ def stop(message = None):
     breaknum += 1
 
 def accumulator(start_value = 0):
-  i = start_value - 1
-  while True:
-    i += 1
-    yield i
+    ''' accumulator returns a generator that generates numbers, starting with
+    it's input value. '''
+    i = start_value - 1
+    while True:
+        i += 1
+        yield i
