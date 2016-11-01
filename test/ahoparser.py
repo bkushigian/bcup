@@ -2,7 +2,7 @@ from src.metaparser import MetaParser
 from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
 from src.symbols import Terminal, NonTerminal, Production, terminalEOF
 from src.statemachine import Item, State, LLStateMachine
-from src.helper import stop
+from src.helper import stop, DEBUG
 from sys import exit
 
 class TokenBinOpAst(Token):
@@ -34,12 +34,14 @@ class MyLexer(Lexer):
 
     def lex(self):
         tokens = []
-        print "LEX: PROGRAM =", self.program
-        raw_input()
+        if DEBUG: 
+            print "LEX: PROGRAM =", self.program
+            raw_input()
         toks = self.program.split()
-        print "TOKS"
-        print toks
-        raw_input()
+        if DEBUG: 
+            print "TOKS"
+            print toks
+            raw_input()
         for tok in toks:
             if tok.isdigit():
                 tokens.append(TokenNum(tok))
@@ -53,12 +55,14 @@ class MyLexer(Lexer):
                 tokens.append(TokenLParen())
             elif tok == ')':
                 tokens.append(TokenRParen())
-            print "TOK:", tok, " TOKEN[-1]", tokens[-1]
+            if DEBUG: 
+                print "TOK:", tok, " TOKEN[-1]", tokens[-1]
 
         tokens.append(TokenEOF())
-        print "LEXER: TOKENS",
-        print tokens
-        raw_input()
+        if DEBUG: 
+            print "LEXER: TOKENS",
+            print tokens
+            raw_input()
         self.tokens = iter(tokens)
 
     def next(self):
@@ -107,7 +111,11 @@ class Parser(object):
             return ', '.join([str(i) for i in reversed(s)])
 
         def print_states():
-            print "PRODUCTIONS: "
+            print
+            print '=' * 80
+            print "{0:=^80}".format("   PRODUCTIONS   ")
+            print '=' * 80
+            print
             print mp.productions
             print "CONSUMED: ", consumed
             print "STACK                         , TERMINAL, ACTION"
@@ -119,9 +127,10 @@ class Parser(object):
         stacks.append(capture_state())
         X = stack[-1]
         while X != terminalEOF:
-            print " --- PARSER.PARSE(): TOP OF WHILE --- "
-            print "    X = {}, a = {}".format(X,a)
-            print "STACK:", stack
+            if DEBUG:
+                print " --- PARSER.PARSE(): TOP OF WHILE --- "
+                print "    X = {}, a = {}".format(X,a)
+                print "STACK:", stack
             if X == a:
                 stack.pop()
                 action = "match {}".format(str(a))
@@ -138,11 +147,13 @@ class Parser(object):
                 exit()
             else:
                 p = table[(X,a)][0]
+                # XXX: Next block is for debuggin
                 if len(table[(X,a)]) > 1:
                     print "ERROR: TABLE NON UNIT LENGTH"
                     raw_input()
                 rhs = list(p.rhs)
-                print p  # Output production
+                if DEBUG:
+                    print p  # Output production
                 stack.pop()
                 while rhs:
                     stack.append(rhs.pop())
@@ -158,15 +169,17 @@ def main():
     prog1 = "id + id * id"
     with open("test/ahogrammar.notcup") as f:
         grammar = f.read()
-    print "CREATING PARSER"
+    if DEBUG: 
+        print "CREATING PARSER"
     parser = Parser(grammar)
-    print
-    print
-    print "=" * 80
-    print "{0:=^80}".format("   BEGINNING PARSE   ")
-    print "=" * 80
-    print
-    print
+    if DEBUG: 
+        print
+        print
+        print "=" * 80
+        print "{0:=^80}".format("   BEGINNING PARSE   ")
+        print "=" * 80
+        print
+        print
     parser.sm.print_table()
     parser.parse(prog1)
 

@@ -3,6 +3,8 @@ These are filler classes for tests and can (should) be overridden.
 This lexer class is the default for parsing a grammar and can be extended to
 parse different forms of grammars.'''
 
+from src.helper import DEBUG
+
 class Token(object):
     def __init__(self, value=None):
         self.name = None
@@ -76,8 +78,10 @@ class Lexer(object):
         seperated.
         '''
         tokens = []
-        print "LEX: PROGRAM =", self.program
-        raw_input()
+        if DEBUG:
+            print "LEX: PROGRAM =", self.program
+            raw_input()
+
         toks = self.program.split()
         for tok in toks:
             if tok.isdigit():
@@ -88,8 +92,9 @@ class Lexer(object):
                 tokens.append(TokenBinOpAdd('+'))
 
         tokens.append(tokenEOF)
-        print tokens
-        raw_input()
+        if DEBUG:
+            print tokens
+            raw_input()
         self.tokens = iter(tokens)
 
     def next(self):
@@ -100,4 +105,3 @@ class Lexer(object):
         return self.tokens.next()
 
 tokenEOF = TokenEOF()    # A Cannonical EOF token
-                

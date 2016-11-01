@@ -1,7 +1,7 @@
 ''' statemachine.py: Represents the LR(1) state machine. Generated from output
 of MetaParser. '''
 from src.metaparser import MetaParser
-from src.helper import accumulator, stop
+from src.helper import accumulator, stop, DEBUG
 from src.symbols import ( Symbol, Terminal, NonTerminal, Production,
                           Productions, startSymbol, terminalEOF, emptyString)
 from sys import exit
@@ -58,58 +58,66 @@ class State(object):
     def closure(self):
         closure = set()
         closure.update(self.kernel)
-        print "="*80
-        print "CLOSURE()"
-        print "KERNEL: ", self.kernel
-        print "="*80
-        while True:
+        if DEBUG:
             print "="*80
+            print "CLOSURE()"
+            print "KERNEL: ", self.kernel
+            print "="*80
+        while True:
+            if DEBUG:
+                print "="*80
             updated = False
-            # print
-            # print
-            # print "CLOSURE:", closure
             new_closure = set(closure)
 
             for item in closure:
                 p, n, f = item.production, item.position, item.follows
-                print (' ' * 5) +  ('-'*70 ) + (' ' * 5)
-                print 
-                print "p = {}, n = {}, f = {}".format(p,n,f)
+                if DEBUG:
+                    print (' ' * 5) +  ('-'*70 ) + (' ' * 5)
+                    print 
+                    print "p = {}, n = {}, f = {}".format(p,n,f)
                 if n >= len(p.rhs):
                     continue
                 next_symbol = p.rhs[n]
-                print 
-                print "NEXT SYMBOL:", next_symbol, type(next_symbol)
-                print "PRODUCTIONS:\n", self.productions
-                print 
+                if DEBUG:
+                    print 
+                    print "NEXT SYMBOL:", next_symbol, type(next_symbol)
+                    print "PRODUCTIONS:\n", self.productions
+                    print 
 
                 if not isinstance(next_symbol, NonTerminal):
-                    print "    CONINUING..."
+                    if DEBUG:
+                        print "    CONINUING..."
                     continue
                 for prod in self.productions.get_productions_for(next_symbol):
-                    print "    PROD   :", prod
+                    if DEBUG:
+                        print "    PROD   :", prod
                     for a in f:
-                        print "        a       :", a
-                        print "        FIRST(a):", a.firsts
+                        if DEBUG:
+                            print "        a       :", a
+                            print "        FIRST(a):", a.firsts
                         new_item = Item(prod, 0, self.productions)
                         inp = list(p.rhs[n+1:]) + [a]
                         fos = self.productions.firsts_of_string(list(p.rhs[n+1:]) + [a])
-                        print "        FRST STR:", fos
+                        if DEBUG:
+                            print "        FRST STR:", fos
                         for b in self.productions.firsts_of_string(list(p.rhs[n+1:]) + [a]):
-                            print "            b       :", b
+                            if DEBUG:
+                                print "            b       :", b
                             new_item.add_follow(b)
-                        print "        NEW ITEM:", new_item
+                        if DEBUG:
+                            print "        NEW ITEM:", new_item
                         if new_item not in new_closure:
-                            print "        ADD ITEM:", new_item
+                            if DEBUG:
+                                print "        ADD ITEM:", new_item
                             updated = True
                             new_closure.add(new_item)
-
-                print "UPDATED    :", updated
-                print "CLOSURE    :", closure
-                print "NEW CLOSURE:", new_closure
-                print "NEW CLOSURE == CLOSURE: ", new_closure == closure
-                print 
-                stop()
+                if DEBUG:
+                    print "UPDATED    :", updated
+                    print "CLOSURE    :", closure
+                    print "NEW CLOSURE:", new_closure
+                    print "NEW CLOSURE == CLOSURE: ", new_closure == closure
+                    print 
+                    stop()
             closure = new_closure
             if not updated:
                 break
@@ -198,32 +206,38 @@ class LRStateMachine(StateMachine):
         self.number_of_states = 0
 
     def generate_states(self):
-        print "GENERATING STATES"
+        if DEBUG:
+            print "GENERATING STATES"
         I0 = Item(self.start, 0, self.productions)
         I0.add_follow(terminalEOF)
 
         S0 = State([I0])
-        print "S0 State Num:", S0.state_num
+        if DEBUG:
+            print "S0 State Num:", S0.state_num
         self.states.append(S0)
         self.number_of_states += 1
         self.gen_state(S0)
 
-        print "STATE MACHINE:"
+        if DEBUG:
+            print "STATE MACHINE:"
         for s in self.states:
             s.print_details()
-        print
-        print "GOTO TABLE"
-        for key in self.goto.keys():
-            print (key[0], key[1]) ,"-->", self.goto[key]
+        if DEBUG:
+            print
+            print "GOTO TABLE"
+            for key in self.goto.keys():
+                print (key[0], key[1]) ,"-->", self.goto[key]
 
     def gen_state(self, state):
-        print "    GEN STATE:", self.number_of_states
-        stop()
+        if DEBUG:
+            print "    GEN STATE:", self.number_of_states
+            stop()
         transfer_state_map = {} # Set of symbols to transfer on
 
         # Get symbols to transfer on, and corresponding production numbers
         for i in state.items:
-            print "CONSIDERING ITEM {}".format(i)
+            if DEBUG:
+                print "CONSIDERING ITEM {}".format(i)
             if i.to_transfer() not in transfer_state_map:
                 transfer_state_map[i.to_transfer()] = []
             transfer_state_map[i.to_transfer()].append(i.shift())
@@ -231,15 +245,16 @@ class LRStateMachine(StateMachine):
         # transfer_state_map associates symbols w/ items that have already been
         # 'shifted'. We use this to construct the goto table
 
-        print "TRANSFER_STATE_MAP: ",transfer_state_map
-
-        print "KEYS: ", transfer_state_map.keys()
+        if DEBUG:
+            print "TRANSFER_STATE_MAP: ",transfer_state_map
+            print "KEYS: ", transfer_state_map.keys()
         for symbol in transfer_state_map.keys():
-            
-            print "SYMBOL:", symbol
+            if DEBUG:
+                print "SYMBOL:", symbol
             if symbol is None:
                 continue
-            stop('CREATING NEW STATE > ')
+            if DEBUG:
+                stop('CREATING NEW STATE > ')
             s = State(transfer_state_map[symbol], -1) # Create a new state
             if s not in self.state_set:
                 self.number_of_states += 1
@@ -306,8 +321,9 @@ class LLStateMachine(StateMachine):
         table = self.table
 
         for p in prods:
-            print
-            print "    CURRENT_PRODUCTON: {}".format(p)
+            if DEBUG:
+                print
+                print "    CURRENT_PRODUCTON: {}".format(p)
             alpha = list(p.rhs)
             A     = p.lhs
 
@@ -316,32 +332,40 @@ class LLStateMachine(StateMachine):
             for a in alpha_firsts:         # 1
                 if a.is_terminal() and a != emptyString:        # 1a
                     self._add_to_table(A, a, p) # Add (A,a) -> p to table
-                    print "    ADDED1 {}, {}: {}".format(A,a,p)
+                    if DEBUG:
+                        print "    ADDED1 {}, {}: {}".format(A,a,p)
 
             if emptyString in alpha_firsts:
-                print "    FOLLOWS{}:".format(A), A.follows
+                if DEBUG:
+                    print "    FOLLOWS{}:".format(A), A.follows
                 for b in A.follows:
-                    print "    b:", b
+                    if DEBUG:
+                        print "    b:", b
                     if b.is_terminal() and b != emptyString:
                         self._add_to_table(A, b, p)
-                        print "    ADDED2 {}, {}: {}".format(A,b,p)
+                        if DEBUG:
+                            print "    ADDED2 {}, {}: {}".format(A,b,p)
                 if terminalEOF in A.follows:
                     self._add_to_table(A, terminalEOF, p)
-                    print "    ADDED3 {}, {}: {}".format(A,terminalEOF,p)
-
-        print 
-        print " === LL GENERATE TABLE ==="
+                    if DEBUG:
+                        print "    ADDED3 {}, {}: {}".format(A,terminalEOF,p)
+        if DEBUG:
+            print 
+            print " === LL GENERATE TABLE ==="
         entry_num = 0
         for k in self.table.keys():
             entry_num += 1
-            print "TABLE ENTRY: {}".format(entry_num), 
-            print "    M[{},{}]:".format(k[0], k[1])
-            for entry in self.table[k]:
-                print "        {}".format(entry)
-            print
-        stop("GEN TABLES")
+            if DEBUG:
+                print "TABLE ENTRY: {}".format(entry_num), 
+                print "    M[{},{}]:".format(k[0], k[1])
+                for entry in self.table[k]:
+                    print "        {}".format(entry)
+        if DEBUG:
+            stop("GEN TABLES")
 
     def print_table(self):
+        ''' Print the transition table '''
+        # TODO: This could use some refinement
         terms, nonterms = list(self.terminals), list(self.nonterminals)
         table = self.table
 
@@ -364,12 +388,11 @@ class LLStateMachine(StateMachine):
                     print
                 return f(p.num)
             return f('')
-
-        print " === PRODUCTIONS === "
-        print self.productions 
         print
-        print
-
+        print '=' * 80
+        print '{0:=^80}'.format("   LLStateMachine Table   ")
+        print '=' * 80
+        print 
         # Print Terminals
         seperate()
         print f(' '),
