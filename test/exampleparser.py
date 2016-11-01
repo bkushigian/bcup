@@ -35,12 +35,7 @@ class MyLexer(Lexer):
 
     def lex(self):
         tokens = []
-        print "LEX: PROGRAM =", self.program
-        raw_input()
         toks = self.program.split()
-        print "TOKS"
-        print toks
-        raw_input()
         for tok in toks:
             if tok.isdigit():
                 tokens.append(TokenNum(tok))
@@ -54,12 +49,8 @@ class MyLexer(Lexer):
                 tokens.append(TokenLParen())
             elif tok == ')':
                 tokens.append(TokenRParen())
-            print "TOK:", tok, " TOKEN[-1]", tokens[-1]
 
         tokens.append(TokenEOF())
-        print "LEXER: TOKENS",
-        print tokens
-        raw_input()
         self.tokens = iter(tokens)
 
     def next(self):
@@ -108,7 +99,13 @@ class Parser(object):
             return ', '.join([str(i) for i in reversed(s)])
 
         def print_states():
-            print "PRODUCTIONS: "
+            print
+            print
+            print "=" * 80
+            print "{0:=^80}".format("   PRODUCTIONS   ")
+            print "=" * 80
+            print
+            print
             print mp.productions
             print "CONSUMED: ", consumed
             print "STACK                         , TERMINAL, ACTION"
@@ -120,16 +117,12 @@ class Parser(object):
         stacks.append(capture_state())
         X = stack[-1]
         while X != terminalEOF:
-            print " --- PARSER.PARSE(): TOP OF WHILE --- "
-            print "    X = {}, a = {}".format(X,a)
-            print "STACK:", stack
             if X == a:
                 stack.pop()
                 action = "match {}".format(str(a))
                 a = next_terminal()
                 stacks.append(capture_state())
             elif X.is_terminal():
-                # error
                 print "Parse Error: Unexpected terminal {}".format(X)
                 print_states()
                 exit()
@@ -159,15 +152,7 @@ def main():
     prog1 = "id + 3"
     with open("test/examplegrammar.notcup") as f:
         grammar = f.read()
-    print "CREATING PARSER"
     parser = Parser(grammar)
-    print
-    print
-    print "=" * 80
-    print "{0:=^80}".format("   BEGINNING PARSE   ")
-    print "=" * 80
-    print
-    print
     parser.sm.print_table()
     parser.parse(prog1)
 
