@@ -1,18 +1,31 @@
 class Token(object):
-    name = None
     def __init__(self, value=None):
+        self.name = None
         self.value = value
+        self.symbol = None
     def __repr__(self):
-        return "<{},{}>".format(self.name, self.value)
+        if self.symbol:
+            return " {} ".format(self.symbol)
+        return "Token({},{})".format(self.name, self.value)
 
 class TokenId(Token):
-    name  = "ID"
+    def __init__(self, value):
+        self.symbol = str(value)
+        self.value = value
+        self.name = "ID"
+
+    def __repr__(self):
+        return "Token({},{})".format(self.name, self.value)
 
 class TokenNum(Token):
-    name = "NUM"
     def __init__(self, value):
-        value = int(value)
         super(TokenNum, self).__init__(value)
+        self.value = int(value)
+        self.symbol = "{}".format(value)
+        self.name = "NUM"
+
+    def __repr__(self):
+        return "Token({},{})".format(self.name, self.value)
 
 class TokenBinOp(Token):
     name = "BINOP"
@@ -21,24 +34,41 @@ class TokenBinOp(Token):
     def __repr__(self):
         return "<{}>".format(self.name)
 
+    def __repr__(self):
+        return "Token({},{})".format(self.name, self.value)
+
 class TokenBinOpAdd(Token):
-    name = "ADD"
+    def __init__(self, value= None):
+        self.name = "ADD"
+        self.symbol = "+"
+
+    def __repr__(self):
+        return "Token({})".format(self.name)
 
 class TokenEOF(Token):
-    name = "EOF"
+    def __init__(self):
+        self.name = "EOF"
+        self.symbol = "$"
+
+    def __repr__(self):
+        return "Token({})".format(self.symbol)
 
 class Lexer(object):
     ''' Trivial lexer, can be overridden, this adds id's and nums'''
     def __init__(self, program = None):
         self.program = program
         self.token_map = {"NUM" : TokenNum, "ID" : TokenId, "ADD" : TokenBinOpAdd, "EOF" : TokenEOF }
+        if self.program:
+            self.lex()
 
     def load_program(self, program):
         self.program = program
 
     def lex(self):
         tokens = []
-        toks = program.split()
+        print "LEX: PROGRAM =", self.program
+        raw_input()
+        toks = self.program.split()
         for tok in toks:
             if tok.isdigit():
                 tokens.append(TokenNum(tok))
@@ -46,12 +76,14 @@ class Lexer(object):
                 tokens.append(TokenId(tok))
             elif tok == '+':
                 tokens.append(TokenBinOpAdd('+'))
+
+        tokens.append(tokenEOF)
+        print tokens
+        raw_input()
         self.tokens = iter(tokens)
 
     def next(self):
         return self.tokens.next()
+
+tokenEOF = TokenEOF()
                 
-
-
-
-

@@ -1,0 +1,20 @@
+nonterminal Expr E
+nonterminal Expr Et
+nonterminal Expr T
+nonterminal Expr Tt
+nonterminal Expr F
+
+terminal    ID
+terminal    ADD
+terminal    AST
+terminal    LPAREN
+terminal    RPAREN
+
+E  ::=  T Et
+Et ::=  ADD  T Et
+    | 
+T  ::= F Tt
+Tt ::= AST F Tt
+    | 
+F ::= LPAREN E RPAREN
+    | ID

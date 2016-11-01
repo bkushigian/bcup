@@ -1,9 +1,9 @@
 ''' statemachine.py: Represents the LR(1) state machine. Generated from output
 of MetaParser. '''
 from src.metaparser import MetaParser
-from src.helper import accumulator
+from src.helper import accumulator, stop
 from src.symbols import ( Symbol, Terminal, NonTerminal, Production,
-                          Productions, startSymbol, terminalEOF)
+                          Productions, startSymbol, terminalEOF, emptyString)
 from sys import exit
 
 class Action(object):
@@ -109,7 +109,7 @@ class State(object):
                 print "NEW CLOSURE:", new_closure
                 print "NEW CLOSURE == CLOSURE: ", new_closure == closure
                 print 
-                raw_input('> ')
+                stop()
             closure = new_closure
             if not updated:
                 break
@@ -180,6 +180,9 @@ class Item(object):
 
 
 class StateMachine(object):
+    pass
+
+class LRStateMachine(StateMachine):
     def __init__(self, terminals, nonterminals, productions):
         self.terminals    = terminals     # Set of terminals
         self.nonterminals = nonterminals  # Set of nonterminals
@@ -215,7 +218,7 @@ class StateMachine(object):
 
     def gen_state(self, state):
         print "    GEN STATE:", self.number_of_states
-        raw_input("> ")
+        stop()
         transfer_state_map = {} # Set of symbols to transfer on
 
         # Get symbols to transfer on, and corresponding production numbers
@@ -236,7 +239,7 @@ class StateMachine(object):
             print "SYMBOL:", symbol
             if symbol is None:
                 continue
-            raw_input('CREATING NEW STATE > ')
+            stop('CREATING NEW STATE > ')
             s = State(transfer_state_map[symbol], -1) # Create a new state
             if s not in self.state_set:
                 self.number_of_states += 1
@@ -256,6 +259,130 @@ class StateMachine(object):
             s += str(state) + '\n'
         return s
         
+class LLStateMachine(StateMachine):
+    def __init__(self, metaparser):
+        self.mp           = metaparser
+        self.terminals    = self.mp.terminals.values()     # Set of terminals
+        self.nonterminals = self.mp.nonterminals.values()  # Set of nonterminals
+        self.productions  = self.mp.productions   # Productions() instance
+        self.symbols      = self.terminals + self.nonterminals
 
+        # The Start Production
+        self.start        = self.productions.productions[0]
+        self.states       = []
+        self.state_set    = set()
+        
+        self.table        = {}
+        self.number_of_states = 0
 
+        self._generate_table()
 
+    def _add_to_table(self, A, a, prod):
+        assert isinstance(A, NonTerminal), "A = {} must be a nonterminal".format(A)
+        assert isinstance(a, Terminal), "a = {} must be a terminal".format(a)
+        assert isinstance(prod, Production), "prod = {} must be a production".format(prod)
+
+        if (A, a) not in self.table:
+            self.table[(A,a)] = []
+
+        if prod not in self.table[(A,a)]:
+            self.table[(A,a)].append(prod)
+
+    def _generate_table(self):
+        ''' 
+        Algorithm from Aho:
+        For each production A -> alpha of grammar:
+            1 For each terminal a in First(alpha): 
+                1a add A -> alpha to M[A,a]
+            2 If emptyString in First(alpha), then 
+                2a For each terminal b in Follow(A), 
+                    2ai add A -> alpha to M[A,b]. 
+                
+                2b If empty string in First(alpha) and '$' is in Follow(A):
+                    2bi add A -> alpha to M[A,$]
+        ''' 
+
+        prods = self.productions.productions
+        table = self.table
+
+        for p in prods:
+            print
+            print "    CURRENT_PRODUCTON: {}".format(p)
+            alpha = list(p.rhs)
+            A     = p.lhs
+
+            alpha_firsts = self.productions.firsts_of_string(alpha)
+
+            for a in alpha_firsts:         # 1
+                if a.is_terminal() and a != emptyString:        # 1a
+                    self._add_to_table(A, a, p) # Add (A,a) -> p to table
+                    print "    ADDED1 {}, {}: {}".format(A,a,p)
+
+            if emptyString in alpha_firsts:
+                print "    FOLLOWS{}:".format(A), A.follows
+                for b in A.follows:
+                    print "    b:", b
+                    if b.is_terminal() and b != emptyString:
+                        self._add_to_table(A, b, p)
+                        print "    ADDED2 {}, {}: {}".format(A,b,p)
+                if terminalEOF in A.follows:
+                    self._add_to_table(A, terminalEOF, p)
+                    print "    ADDED3 {}, {}: {}".format(A,terminalEOF,p)
+
+        print 
+        print " === LL GENERATE TABLE ==="
+        entry_num = 0
+        for k in self.table.keys():
+            entry_num += 1
+            print "TABLE ENTRY: {}".format(entry_num), 
+            print "    M[{},{}]:".format(k[0], k[1])
+            for entry in self.table[k]:
+                print "        {}".format(entry)
+            print
+        stop("GEN TABLES")
+
+    def print_table(self):
+        terms, nonterms = list(self.terminals), list(self.nonterminals)
+        table = self.table
+
+        def f(a, width=12):
+            s = '{0: ^{1}}|'
+            if isinstance(a, int):
+                a += 1
+            return s.format(str(a),width)
+
+        def seperate(width = 12):
+            s = ((('-' * (width+1)) + '+') * len(terms)) + ('-' * (width) + '+')
+            print s
+
+        def get(a,b):
+            if (a,b) in table:
+                p = table[(a,b)][0]
+                if p.num == None:
+                    print
+                    print "p.num = None, p =", p
+                    print
+                return f(p.num)
+            return f('')
+
+        print " === PRODUCTIONS === "
+        print self.productions 
+        print
+        print
+
+        # Print Terminals
+        seperate()
+        print f(' '),
+        for t in terms:
+            print f(t),
+        print
+        seperate()
+
+        for n in nonterms:
+            print f(n),
+            for t in terms:
+                print get(n,t),
+            print
+            seperate()
+
+        

@@ -3,23 +3,30 @@ from src.symbols import ( Symbol, Terminal, NonTerminal,
                           Productions, startSymbol, terminalEOF)
 
 class MetaParser(object):
-    def __init__(self, grammar_string, lexer):
+    def __init__(self, grammar_string, lexer, augment_grammar = True):
         ''' Assumes that everything is white space seperated,
             Comments on their own line (starting with '#').
             Productions are on their own line.
             
             grammar_string: The string literal to parse
             tokens: map of token names to their corresponding class constructors.
+            augment_grammar: Should we add extra start symbol? Yes for LR, no 
+                for LL.
             '''
         self.grammar_string = grammar_string    # String literal with grammar
+        self.augment_grammar = augment_grammar  # Should we create extra start sym?
         self.terminals    = {}                
         self.nonterminals = {}
         self.lexer        = lexer
         self.token_map    = lexer.token_map
-        self.productions  = Productions()
+        self.productions  = Productions(self.augment_grammar)
         Symbol.set_productions(self.productions)
-
-        self.nonterminals["START"] = startSymbol
+        
+        if augment_grammar:
+            self.nonterminals["START"] = startSymbol
+            self.start = startSymbol
+        else:
+            self.start = None
         self.terminals['$'] = terminalEOF
         self.setup()
 
@@ -28,6 +35,7 @@ class MetaParser(object):
         This is an unwieldly beast. It's just a big loop that does stuff.
         Peruse at your own risk.
         '''
+        global startSymbol
         foundStart = False    # We want to find the start symbol
         lines = iter(self.grammar_string.split('\n'))
         for line in lines:
@@ -50,7 +58,7 @@ class MetaParser(object):
                 assert len(terms) == 2
                 assert terms[0] == 'terminal'
                 name = terms[1]
-                assert name in self.token_map,        "no lexer token by this name"
+                assert name in self.token_map,        "no lexer token by name {}".format(name)
                 assert name not in self.nonterminals, "nonterminal {} already declared".format(name)
                 assert name not in self.terminals,    "terminal {} is already declared".format(name)
                 self.terminals[name] = Terminal(name)
@@ -71,10 +79,17 @@ class MetaParser(object):
                         assert len(terms) > 1 and terms[1] == '::='
                         # Update Start Symbol if necessary
                         current_nt = self.nonterminals[name]
+                        
+                        #  Found the START symbol
                         if not foundStart:
                             print "FOUND START!"
                             foundStart = True
-                            startSymbol.add_production([current_nt])
+                            if self.augment_grammar:
+                                self.start = startSymbol
+                                startSymbol.add_production([current_nt])
+                            else:
+                                self.start = current_nt
+                            # self.productions.add_start(self.start)
                         rhs = map(self.str_to_symbol, list(terms[2:]))
 
                         current_production = current_nt.add_production( rhs )
@@ -108,6 +123,8 @@ class MetaParser(object):
                         continue
                     except:
                         break
+        self.compute_firsts()
+        self.compute_follows()
 
     def str_to_symbol(self, sym):
         if sym in self.terminals:
@@ -118,8 +135,9 @@ class MetaParser(object):
 
     def compute_firsts(self):
         self.productions.compute_firsts()
+
     def compute_follows(self):
-        self.productions.compute_follows()
+        self.productions.compute_follows(self.start)
 
     def firsts_of_string(self, symstr):
         return self.productions.firsts_of_string(symstr)

@@ -1,11 +1,13 @@
-from src.helper import accumulator
+from src.helper import accumulator, stop
 from src.lexer import Token
+
+
 
 class Production(object):
     def __init__(self, lhs, rhs):
         assert isinstance(lhs, NonTerminal), "lhs {} not an instance of NonTerminal".format(lhs)
         self.lhs = lhs
-        self.rhs = tuple(rhs)
+        self.rhs = tuple(rhs)   # rhs is a tuple of Symbols
         self.code = ""
         self.num = -1
 
@@ -22,18 +24,25 @@ class Production(object):
         return hash((self.lhs,self.rhs))
 
 class Productions(object):
-    def __init__(self):
+    def __init__(self, augment_grammar):
         # XXX: There is a lot of duplication of info here.
         self.production_map  = {}   # A map from nonterms to a list of prods
-        self.keys            = []   # Keep the keys ordered, these are NTs
+        self.nonterminals    = []   # Keep the keys ordered, these are NTs
         self.productions     = []   # A list of productions
         self.accum = accumulator(0) # Keep track of production numbers
         self.terminals       = set()
+        self.augment_grammar = augment_grammar
+        self.start           = None
     
+    def add_start(self, start):
+        self.start = start
+        self.nonterminals.append(self.start)
+        
+
     def add_production(self, prod):
 
         if prod.lhs not in self.production_map:
-            self.keys.append(prod.lhs)
+            self.nonterminals.append(prod.lhs)
             self.production_map[prod.lhs] = []
         self.production_map[prod.lhs].append(prod.rhs)
         prod.num = self.accum.next()
@@ -53,7 +62,7 @@ class Productions(object):
     def compute_firsts(self):
         ''' Go through all productions, compute first and follows '''
         firsts = {}
-        for key in self.keys:     # Initialize these to empty
+        for key in self.nonterminals:     # Initialize these to empty
             firsts[key] = set()
         for term in self.terminals:
             firsts[term] = set()
@@ -85,11 +94,15 @@ class Productions(object):
         self.firsts = firsts
 
         # Now, update symbols local firsts set
-        for symbol in self.keys + list(self.terminals):
+        for symbol in self.nonterminals + list(self.terminals):
             symbol.firsts = firsts[symbol]
                         
     def firsts_of_string(self, symstr, remove_empty_string = False):
         firsts = set()
+        if len(symstr) == 0 and not remove_empty_string:
+            firsts.add(emptyString)
+            return firsts
+
         for sym in symstr:
             firsts.update(sym.firsts)
             if emptyString not in sym.firsts:
@@ -114,19 +127,21 @@ class Productions(object):
                 return False
         return True
 
-    def compute_follows(self):
+    def compute_follows(self, start_sym = None):
         ''' 
         Compute the follow sets for nonterminal A. From Aho, for nonterminal
         A we define FOLLOW(A) := { t : t is TERMINAL, there is a sentential form
         alpha A t beta}. That is, it is the set of terminals that can directly
         follow A in some sentential form.
         '''
+        if start_sym == None:
+            start_sym = self.start
         follows = {}
-        for key in self.keys:     # Initialize these to empty
+        for key in self.nonterminals:     # Initialize these to empty
             follows[key] = set()
         for term in self.terminals:
             follows[term] = set()
-        follows[startSymbol].add(terminalEOF)
+        follows[start_sym].add(terminalEOF)
         
         productions = self.productions
         while True:   # Fixed Point Algorithm
@@ -159,6 +174,10 @@ class Productions(object):
                     if right_productions:   # There are terms following term
                                             # Use Rule (1)
                         firsts_of_right_productions = self.firsts_of_string(right_productions, True)
+                        if emptyString in firsts_of_right_productions:
+                            print "        FIRSTS OF RIGHT :", firsts_of_right_productions
+                            stop(" [!] EMPTY STRING!!! ")
+                            firsts_of_right_productions.remove(emptyString)
                         print "        FIRST OF RP:", firsts_of_right_productions
                         if not firsts_of_right_productions.issubset(follows[B]):
                             updated = True
@@ -178,19 +197,23 @@ class Productions(object):
                             updated = True
                             follows[B].update(follows[A])
                             if emptyString in follows[B]:
+                                print " [!] EMPTY STRING!!!"
                                 follows[B].remove(emptyString)
                     print "        FOLLOWS    :", follows[B]
+                    stop(' [!] Is there an empty string? > ')
 
             if not updated:
                 self.follows = follows
                 break
+        for nt in self.nonterminals:
+            nt.follows = self.follows[nt]
 
 
     def __repr__(self):
         # XXX: This is kind of hacky...
         s = ""
         accum = accumulator(1)
-        for key in self.keys:
+        for key in self.nonterminals:
             if s:
                 s += '\n'
             s += "({}) {} ::= {}".format(accum.next(), key,
@@ -208,6 +231,12 @@ class Symbol(object):
     def set_productions(prod):
         Symbol.productions = prod
 
+    def is_terminal(self):
+        return False
+
+    def is_nonterminal(self):
+        return False
+
 class Terminal(Symbol):
     def __init__(self, name):
         self.name = name
@@ -223,6 +252,9 @@ class Terminal(Symbol):
     def add_to_first(self, f):
         self.first.append(f)
 
+    def is_terminal(self):
+        return True
+
     def __eq__(self, other):
         return isinstance(other, Terminal) and self.name == other.name
 
@@ -237,10 +269,11 @@ class Terminal(Symbol):
         
 
 class NonTerminal(Symbol):
-    def __init__(self, name, tp):
+    def __init__(self, name, tp, symbol = None):
         self.my_prods = []      # Local Productions: self -> alpha
         self.name     = name    # Name of nonterminal, specified by grammar
         self.type     = tp      # Type of nonterminal, specified by grammar
+        self.full_print = False
 
         if self in self.symbolSet:
             print "*** ERROR - {} already created".format(self)
@@ -260,6 +293,9 @@ class NonTerminal(Symbol):
         self.productions.add_production(self.my_prods[-1])
         return self.my_prods[-1]
 
+    def is_nonterminal(self):
+        return True
+
     def __eq__(self, other):
         return isinstance(other,NonTerminal) and self.name == other.name and self.type == other.type
 
@@ -269,8 +305,11 @@ class NonTerminal(Symbol):
 
     def __hash__(self):
         return hash( (self.name, self.type) )
+
     def __repr__(self):
-        return "<{} {}>".format(self.type, self.name)
+        if self.full_print:
+            return "<{} {}>".format(self.type, self.name)
+        return "<{}>".format(self.name)
 
 
 startSymbol = NonTerminal("START", "PROG")

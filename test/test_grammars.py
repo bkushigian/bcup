@@ -1,14 +1,9 @@
 from src.metaparser import MetaParser
 from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
 from src.symbols import Terminal, NonTerminal, Production
-from src.statemachine import Item, State, StateMachine
+from src.statemachine import Item, State, LRStateMachine
+from src.helper import stop
 
-breaknum = 1
-
-def stop():
-    global breaknum
-    raw_input('BREAK {}> '.format(breaknum))
-    breaknum += 1
 
 with open("test/p4grammar.notcup") as f:
     grammar = f.read()
@@ -71,7 +66,7 @@ stop()
 print 
 print " === TESTING STATE MACHINE ==="
 
-sm = StateMachine(mp.terminals.values(), mp.nonterminals.values(), productions)
+sm = LRStateMachine(mp.terminals.values(), mp.nonterminals.values(), productions)
 print sm
 
 sm.generate_states()
