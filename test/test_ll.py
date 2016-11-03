@@ -2,7 +2,7 @@ from src.metaparser import MetaParser
 from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
 from src.symbols import Terminal, NonTerminal, Production
 from src.statemachine import Item, State, LLStateMachine
-from src.helper import stop
+from src.helper import stop, print_banner
 
 
 with open("test/p4grammar.notcup") as f:
@@ -11,30 +11,33 @@ with open("test/p4grammar.notcup") as f:
 lexer = Lexer(grammar)
 mp    = MetaParser(grammar, lexer, False)
 
-print " === TERMS === "
+print_banner("   TERMINALS   ", width = 50)
 print mp.terminals
-print " === NONTERMS === "
+
+print_banner("   NONTERMINALS   ", width = 50)
 print mp.nonterminals
-print " === TOKEN MAP ==="
+
+print_banner("   TOKEN MAP   ", width = 50)
 print mp.token_map
 
-print " === PRODUCTIONS ==="
+print_banner("   PRODUCTIONS   ", width = 50)
 print mp.productions
 
 mp.compute_firsts()
 mp.compute_follows()
+
 firsts = mp.productions.firsts
 follows = mp.productions.follows
 
 # Some Debug Info...
-print " === FIRSTS === "
+print_banner("   FIRSTS   ", width = 50)
 for key in firsts:
     s = "FIRST({}) = {{".format(key)
     for val in firsts[key]:
         s += "{}, ".format(val)
     print s + "}"
 
-print " === FOLLOWS === "
+print_banner("   FOLLOWS   ", width = 50)
 for key in follows:
     if isinstance(key, Terminal):
         continue
@@ -43,16 +46,13 @@ for key in follows:
         s += "{}, ".format(val)
     print s + "}"
 
-print 
-print " === PRODUCTION NUMBERS === "
+print_banner("   PRODUCTIONS   ", width = 50)
 productions = mp.productions
-for i in range(len(productions.productions)):
-    print i, productions.productions[i]
+for p in productions:
+    print p
 
-stop()
 
-print 
-print " === TESTING STATE MACHINE ==="
+print_banner("   TESTING STATE MACHINE   ", width=72, filler='=')
 
 sm = LLStateMachine(mp)
 sm.print_table()

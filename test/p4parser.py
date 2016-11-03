@@ -1,24 +1,13 @@
 from src.metaparser import MetaParser
-from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
+from src.lexer import Lexer
+from src.tokens import ( Token, TokenId, TokenNum, TokenEOF, 
+                         TokenBinOpAdd, TokenLParen, TokenRParen,
+                         TokenBinOpAst)
 from src.symbols import Terminal, NonTerminal, Production, terminalEOF
 from src.statemachine import Item, State, LLStateMachine
 from src.helper import stop
 from sys import exit
 
-class TokenBinOpAst(Token):
-    def __init__(self):
-        self.name = "AST"
-        self.symbol = "*"
-
-class TokenLParen(Token):
-    def __init__(self):
-        self.name = "LPAREN"
-        self.symbol = "("
-
-class TokenRParen(Token):
-    def __init__(self):
-        self.name = "RPAREN"
-        self.symbol = ")"
 
 class MyLexer(Lexer):
     def __init__(self, program = None):

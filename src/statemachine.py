@@ -191,13 +191,14 @@ class StateMachine(object):
     pass
 
 class LRStateMachine(StateMachine):
-    def __init__(self, terminals, nonterminals, productions):
-        self.terminals    = terminals     # Set of terminals
-        self.nonterminals = nonterminals  # Set of nonterminals
-        self.symbols      = terminals + nonterminals
-        self.productions  = productions   # Productions() instance
+    def __init__(self, metaparser):
+        self.mp           = metaparser
+        self.terminals    = metaparser.terminals
+        self.nonterminals = metaparser.nonterminals
+        self.symbols      = self.terminals + self.nonterminals
+        self.productions  = metaparser.productions
         # The Start Production
-        self.start        = productions.productions[0]
+        self.start        = self.productions[0]
         self.states       = []
         self.state_set    = set()
         
@@ -277,13 +278,13 @@ class LRStateMachine(StateMachine):
 class LLStateMachine(StateMachine):
     def __init__(self, metaparser):
         self.mp           = metaparser
-        self.terminals    = self.mp.terminals.values()     # Set of terminals
-        self.nonterminals = self.mp.nonterminals.values()  # Set of nonterminals
+        self.terminals    = self.mp.terminals     # Set of terminals
+        self.nonterminals = self.mp.nonterminals  # Set of nonterminals
         self.productions  = self.mp.productions   # Productions() instance
         self.symbols      = self.terminals + self.nonterminals
 
         # The Start Production
-        self.start        = self.productions.productions[0]
+        self.start        = self.productions[0]
         self.states       = []
         self.state_set    = set()
         
@@ -317,7 +318,7 @@ class LLStateMachine(StateMachine):
                     2bi add A -> alpha to M[A,$]
         ''' 
 
-        prods = self.productions.productions
+        prods = self.productions
         table = self.table
 
         for p in prods:
@@ -327,7 +328,7 @@ class LLStateMachine(StateMachine):
             alpha = list(p.rhs)
             A     = p.lhs
 
-            alpha_firsts = self.productions.firsts_of_string(alpha)
+            alpha_firsts = prods.firsts_of_string(alpha)
 
             for a in alpha_firsts:         # 1
                 if a.is_terminal() and a != emptyString:        # 1a
@@ -407,5 +408,3 @@ class LLStateMachine(StateMachine):
                 print get(n,t),
             print
             seperate()
-
-        

@@ -5,6 +5,7 @@ class Production(object):
     ''' The production class holds a single grammar production, along with some
     meta information (such as the production number) and the associated code
     string that will build the parse tree.'''
+    _name = 'Production'
     def __init__(self, lhs, rhs):
         assert isinstance(lhs, NonTerminal), "lhs {} not an instance of NonTerminal".format(lhs)
         self.lhs = lhs
@@ -27,41 +28,59 @@ class Production(object):
 class Productions(object):
     ''' The Productions class holds the collection of productions associated
     with a grammar. This could also maybe be named the Grammar class.'''
+    _name = 'Productions'
     def __init__(self, augment_grammar):
         # XXX: There is a lot of duplication of info here.
-        self.production_map  = {}   # A map from nonterms to a list of prods
-        self.nonterminals    = []   # Keep the keys ordered, these are NTs
-        self.productions     = []   # A list of productions
+        self._production_map  = {}   # A map from nonterms to a list of prods
+        self._productions     = []   # A list of productions
+        # TODO: Use Terminals/NonTerminals classes
+        self.terminals       = Terminals()
+        self.nonterminals    = NonTerminals()
+        # TODO: This may be obsolete
         self.accum = accumulator(0) # Keep track of production numbers
-        self.terminals       = set()
         self.augment_grammar = augment_grammar
+        # The start symbol of the grammar
         self.start           = None
     
+    def __getitem__(self, n):
+        if isinstance(n, int):
+            if n <= -len(self._productions) or n > len(self._productions):
+                raise IndexError("Index {} out of bounds".format(n))
+            return self._productions[n]
+        elif isinstance(n, NonTerminal):
+            if n not in self._productions_map:
+                raise KeyError("{}".format(n))
+            return self._productions_map[n]
+        raise ValueError("Expected type int or type NonTerminal")
+
+    def __iadd__(self, prod):
+        ''' Adds a single production to instance '''
+        if not isinstance(prod, Production):
+            raise ValueError(prod)
+        if prod.lhs not in self.nonterminals:
+            self.nonterminals += prod.lhs
+            self._production_map[prod.lhs] = []
+        self._production_map[prod.lhs].append(prod.rhs)
+        prod.num = self.accum.next()
+        self._productions.append(prod)
+        for sym in prod.rhs:
+            if isinstance(sym, Terminal):
+                self.terminals += sym
+        return self
+
     def add_start(self, start):
         ''' Update with a start symbol. At the time of reading a grammar we
         don't know if we want to augment it or not. This should probably be
         fixed at some point.'''
         self.start = start
-        self.nonterminals.append(self.start)
+        self.nonterminals += start
         
-    def add_production(self, prod):
-        ''' Add a newly read production. This should be called from the
-        MetaParser class. '''
-        if prod.lhs not in self.production_map:
-            self.nonterminals.append(prod.lhs)
-            self.production_map[prod.lhs] = []
-        self.production_map[prod.lhs].append(prod.rhs)
-        prod.num = self.accum.next()
-        self.productions.append(prod)
-        for sym in prod.rhs:
-            if isinstance(sym, Terminal):
-                self.terminals.add(sym)
 
     def get_productions_for(self, nt):
         ''' Return a set of all productions for nonterminal `nt`. '''
         assert isinstance(nt, NonTerminal), "Can't get productions for terminals"
         result = set()
-        for p in self.productions:
+        for p in self._productions:
             if nt == p.lhs:
                 result.add(p)
         return result
@@ -78,7 +97,7 @@ class Productions(object):
         while True:
             updated = False     # Have we updated firsts?
             # Loop thru nonterminals, add first sets
-            for prod in self.productions:
+            for prod in self._productions:
                 rhs = prod.rhs  # Get the RHS of the production
                 lhs = prod.lhs  # Get the NonTerminal to work on
                 assert isinstance(lhs, NonTerminal)
@@ -101,7 +120,7 @@ class Productions(object):
         self.firsts = firsts
 
         # Now, update symbols local firsts set
-        for symbol in self.nonterminals + list(self.terminals):
+        for symbol in list(self.nonterminals) + list(self.terminals):
             symbol.firsts = firsts[symbol]
                         
     def firsts_of_string(self, symstr, remove_empty_string = False):
@@ -156,7 +175,7 @@ class Productions(object):
             follows[term] = set()
         follows[start_sym].add(terminalEOF)
         
-        productions = self.productions
+        productions = self._productions
         while True:   # Fixed Point Algorithm
             updated = False
             for prod in productions:
@@ -204,16 +223,23 @@ class Productions(object):
             if s:
                 s += '\n'
             s += "({}) {} ::= {}".format(accum.next(), key,
-                        self.production_map[key][0])
+                        self._production_map[key][0])
             l = len(str(key))
-            for p in self.production_map[key][1:]:
+            for p in self._production_map[key][1:]:
                 s += "\n({}) {}  |  {}".format(accum.next(), l * ' ', p)
             
         return s 
 
+    def __iter__(self):
+        return iter(self._productions)
+
+
 class Symbol(object):
     symbolSet = set()
     productions = None
+    def __init__(self):
+        self._name = 'Symbol'
+
     @staticmethod
     def set_productions(prod):
         ''' This allows all classes derived from Symbol to see the full set of
@@ -226,8 +252,15 @@ class Symbol(object):
     def is_nonterminal(self):
         return False
 
+    @staticmethod
+    def reset():
+        Symbol.symbolSet = set()
+        Symbol.productions = None
+        
+
 class Terminal(Symbol):
     def __init__(self, name):
+        self._name = 'Terminal'
         self.name = name
         if self in self.symbolSet:
             print "*** ERROR - {} already created".format(self)
@@ -259,6 +292,7 @@ class Terminal(Symbol):
 
 class NonTerminal(Symbol):
     def __init__(self, name, tp, symbol = None):
+        self._name = 'NonTerminal' # Type Name
         self.my_prods = []      # Local Productions: self -> alpha
         self.name     = name    # Name of nonterminal, specified by grammar
         self.type     = tp      # Type of nonterminal, specified by grammar
@@ -279,7 +313,7 @@ class NonTerminal(Symbol):
 
     def add_production(self, rhs):
         self.my_prods.append(Production(self, rhs))
-        self.productions.add_production(self.my_prods[-1])
+        self.productions += self.my_prods[-1]
         return self.my_prods[-1]
 
     def is_nonterminal(self):
@@ -300,6 +334,102 @@ class NonTerminal(Symbol):
             return "<{} {}>".format(self.type, self.name)
         return "<{}>".format(self.name)
 
+
+class Symbols(object):
+    ''' A collection of symbols to be used during the parse phase '''
+    def __init__(self):
+        self._name = 'Symbols'
+        self._symbols   = []
+        self._symbolset = set()
+        self._namemap   = {}
+        self._elem_type = Symbol
+
+    def __iadd__(self, sym):
+        assert isinstance(sym, self._elem_type), "{} is not instance of {}".format(sym, self._elem_type)
+        if sym not in self._symbolset:
+            self._symbolset.add(sym)
+            self._symbols.append(sym)
+            self._namemap[sym.name] = sym
+        return self
+
+    def __add__(self, other):
+        if not isinstance(other, Symbols):
+            raise ValueError(str(other))
+
+        if isinstance(self,Terminals):
+            if isinstance(other, Terminals):
+                res = Terminals()
+            else:
+                res = Symbols()
+        elif isinstance(self, NonTerminals):
+            if isinstance(other, NonTerminals):
+                res = NonTerminals()
+            else:
+                res = Symbols()
+        else:
+            res = Symbols()
+        for i in self:
+            res += i
+        for j in other:
+            res += j
+        return res
+            
+            
+        
+    def __call__(self, sym):
+        pass
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key <= -len(self._symbols) or key > len(self._symbols):
+                raise IndexError("Index {} out of bounds".format(key))
+            return self._symbols[key]
+        if isinstance(key, str):
+            if key not in self._namemap:
+                raise KeyError(key)
+            return self._namemap[key]
+        raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        if isinstance(key, str):
+            if key in self._namemap:
+                raise KeyError("{} already stored".format(key))
+            if not isinstance(value, self._elem_type):
+                raise TypeError("{}".format(value))
+            self._namemap[key] = value
+            if value not in self._symbolset:
+                self._symbols.append(value)
+                self._symbolset.add(value)
+        else:
+            raise KeyError(str(key))
+
+    def __iter__(self):
+        return iter(self._symbols)
+
+    def __repr__(self):
+        s = '\n'.join(["({}) {}".format(i+1,s) for (i,s) in enumerate(self)])
+        return s
+
+    def __contains__(self, obj):
+        if isinstance(obj, str):
+            return obj in self._namemap
+        return obj in self._symbolset
+            
+
+class Terminals(Symbols):
+    def __init__(self):
+        super(Terminals, self).__init__()
+        self._name      = 'Terminals'
+        self._terminals = self._symbols
+        self._elem_type = Terminal
+
+
+class NonTerminals(Symbols):
+    def __init__(self):
+        super(NonTerminals, self).__init__()
+        self._name = 'NonTerminals'
+        self._nonterminals = self._symbols
+        self._elem_type  = NonTerminal
 
 startSymbol = NonTerminal("START", "PROG")
 terminalEOF = Terminal("$")

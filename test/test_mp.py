@@ -1,7 +1,9 @@
 from src.metaparser import MetaParser
-from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
+from src.lexer import Lexer
+from src.tokens import *
 from src.symbols import Terminal, NonTerminal, Production
 from src.statemachine import Item, State, LRStateMachine
+from src.helper import print_banner
 
 with open("test/grammar.notcup") as f:
     grammar = f.read()
@@ -9,40 +11,30 @@ with open("test/grammar.notcup") as f:
 lexer = Lexer(grammar)
 mp    = MetaParser(grammar, lexer)
 
-print " === TERMS === "
+print_banner("TERMINALS")
 print mp.terminals
-print " === NONTERMS === "
+print_banner("NONTERMINALS")
 print mp.nonterminals
-print " === TOKEN MAP ==="
 print mp.token_map
 
-print " === PRODUCTIONS ==="
+print_banner("PRODUCTIONS")
 print mp.productions
 
 mp.compute_firsts()
+mp.compute_follows()
+
+follows = mp.productions.follows
 firsts = mp.productions.firsts
+
+print_banner("FIRSTS")
 for key in firsts:
     s = "FIRST({}) = {{".format(key)
     for val in firsts[key]:
         s += "{}, ".format(val)
     print s + "}"
 
-print
-print " === first_of_string() === "
-s = mp.nonterminals.values() + mp.terminals.values()
-while s:
-    print s," --> ", mp.firsts_of_string(s)
-    s = s[1:]
 
-s = mp.terminals.values() + mp.nonterminals.values()  
-print
-while s:
-    print s," --> ", mp.firsts_of_string(s)
-    s = s[1:]
-
-mp.compute_follows()
-follows = mp.productions.follows
-print " === FOLLOWS === "
+print_banner("FOLLOWS")
 for key in follows:
     if isinstance(key, Terminal):
         continue
@@ -51,16 +43,8 @@ for key in follows:
         s += "{}, ".format(val)
     print s + "}"
 
-print 
-print " === PRODUCTION NUMBERS === "
-productions = mp.productions
-for i in range(len(productions.productions)):
-    print i, productions.productions[i]
-
-print 
-print " === TESTING STATE MACHINE ==="
-
-sm = LRStateMachine(mp.terminals.values(), mp.nonterminals.values(), productions)
+print_banner("TESTING STATE MACHINE")
+sm = LRStateMachine(mp)
 print sm
 
 sm.generate_states()

@@ -35,6 +35,16 @@ def stop(message = None):
 
     breaknum += 1
 
+def print_banner(message, filler = '=', padding = 1, width = 60, word_padding = '   '):
+    message = word_padding + message + word_padding
+    for i in range(padding):
+        print
+    print '{0: ^80}'.format(filler * width)
+    print '{0: ^80}'.format( ('{0:' + filler + '^{1}}').format(message, width))
+    print '{0: ^80}'.format(filler * width)
+    for i in range(padding):
+        print
+
 def accumulator(start_value = 0):
     ''' accumulator returns a generator that generates numbers, starting with
     it's input value. '''

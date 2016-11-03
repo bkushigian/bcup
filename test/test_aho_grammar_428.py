@@ -1,21 +1,9 @@
 from src.metaparser import MetaParser
 from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
+from src.tokens import *
 from src.symbols import Terminal, NonTerminal, Production
 from src.statemachine import Item, State, LLStateMachine
-from src.helper import stop
-
-
-class TokenBinOpAst(Token):
-    name = "AST"
-    symbol = "*"
-
-class TokenLParen(Token):
-    name = "LPAREN"
-    symbol = "("
-
-class TokenRParen(Token):
-    name = "RPAREN"
-    symbol = ")"
+from src.helper import stop, print_banner
 
 class MyLexer(Lexer):
     def __init__(self, program = None):
@@ -32,14 +20,14 @@ with open("test/aho_grammar_4_28.notcup") as f:
 lexer = MyLexer(grammar)
 mp    = MetaParser(grammar, lexer, False)
 
-print " === TERMS === "
+print_banner( "   TERMINALS   ")
 print mp.terminals
-print " === NONTERMS === "
+print_banner( "   NONTERMINALS   ")
 print mp.nonterminals
-print " === TOKEN MAP ==="
+print_banner( "   TOKEN MAP   ")
 print mp.token_map
 
-print " === PRODUCTIONS ==="
+print_banner( "   PRODUCTIONS   ")
 print mp.productions
 
 mp.compute_firsts()
@@ -48,14 +36,14 @@ firsts = mp.productions.firsts
 follows = mp.productions.follows
 
 # Some Debug Info...
-print " === FIRSTS === "
+print_banner("   FIRSTS   ")
 for key in firsts:
     s = "FIRST({}) = {{".format(key)
     for val in firsts[key]:
         s += "{}, ".format(val)
     print s + "}"
 
-print " === FOLLOWS === "
+print_banner("   FOLLOWS   ")
 for key in follows:
     if isinstance(key, Terminal):
         continue
@@ -64,13 +52,6 @@ for key in follows:
         s += "{}, ".format(val)
     print s + "}"
 
-print 
-print " === PRODUCTION NUMBERS === "
-productions = mp.productions
-for i in range(len(productions.productions)):
-    print i, productions.productions[i]
-
-stop()
 
 print 
 print " === TESTING STATE MACHINE ==="

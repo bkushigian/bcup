@@ -1,6 +1,7 @@
 from src.helper import accumulator
 from src.symbols import ( Symbol, Terminal, NonTerminal, 
-                          Productions, startSymbol, terminalEOF)
+                          Productions, startSymbol, terminalEOF,
+                          Terminals, NonTerminals)
 
 class MetaParser(object):
     ''' Meta Parser is responsible for parsing the grammar.'''
@@ -14,10 +15,10 @@ class MetaParser(object):
             augment_grammar: Should we add extra start symbol? Yes for LR, no 
                 for LL.
         '''
-        self.grammar_string = grammar_string    # String literal with grammar
+        self.grammar_string  = grammar_string    # String literal with grammar
         self.augment_grammar = augment_grammar  # Should we create extra start sym?
-        self.terminals    = {}                  # Map strings to nonterminals
-        self.nonterminals = {}                  # Map strings to terminals
+        self.terminals    = Terminals()
+        self.nonterminals = NonTerminals()
         self.lexer        = lexer               # The grammar lexer
         self.token_map    = lexer.token_map     # Map strings to tokens
 
@@ -30,12 +31,12 @@ class MetaParser(object):
         # XXX: This is working (for now). 
         # TODO: Clean these lines up
         if augment_grammar:
-            self.nonterminals["START"] = startSymbol
+            self.nonterminals += startSymbol
             self.start = startSymbol
         else:
             self.start = None
 
-        self.terminals['$'] = terminalEOF
+        self.terminals  += terminalEOF
         self.setup()
 
     def setup(self):
@@ -49,7 +50,7 @@ class MetaParser(object):
             return self.terminals[sym]
         if sym in self.nonterminals:
             return self.nonterminals[sym]
-        assert False, "sym: {} - not in any table".format(sym)
+        raise ValueError("{}".format(sym))
 
     def compute_firsts(self):
         self.productions.compute_firsts()
@@ -155,13 +156,9 @@ class MetaParser(object):
                     except:
                         break
 
-
-                        
-
-
-
 class Generator(object):
     def __init__(self, terminals, nonterminals, grammar_location):
+        raise NotImplementedError()
         self.productions  = productions
         self.terminals    = terminals
         self.nonterminals = nonterminals

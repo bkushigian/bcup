@@ -1,72 +1,102 @@
 from src.metaparser import MetaParser
 from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
-from src.symbols import Terminal, NonTerminal, Production
+from src.symbols import Terminal, NonTerminal, Production, Symbol
 from src.statemachine import Item, State, LRStateMachine
 from src.helper import stop
 
 
-with open("test/p4grammar.notcup") as f:
-    grammar = f.read()
+grammar1 = '''nonterminal Expr E
+nonterminal Expr Et
+nonterminal Expr T
+nonterminal Expr Tt
+nonterminal Expr F
 
-lexer = Lexer(grammar)
-mp    = MetaParser(grammar, lexer)
+terminal    ID
+terminal    ADD
+terminal    AST
+terminal    LPAREN
+terminal    RPAREN
 
-print " === TERMS === "
-print mp.terminals
-print " === NONTERMS === "
-print mp.nonterminals
-print " === TOKEN MAP ==="
-print mp.token_map
+E  ::=  T Et
+Et ::=  ADD  T Et
+    | 
+T  ::= F Tt
+Tt ::= AST F Tt
+    | 
+F ::= LPAREN E RPAREN
+    | ID
+'''
 
-print " === PRODUCTIONS ==="
-print mp.productions
 
-stop()
-mp.compute_firsts()
-firsts = mp.productions.firsts
-for key in firsts:
-    s = "FIRST({}) = {{".format(key)
-    for val in firsts[key]:
-        s += "{}, ".format(val)
-    print s + "}"
+grammar2 = '''nonterminal Expr G
+nonterminal Expr E
+nonterminal Expr Et
+nonterminal Expr T
 
-print
-print " === first_of_string() === "
-s = mp.nonterminals.values() + mp.terminals.values()
-while s:
-    print s," --> ", mp.firsts_of_string(s)
-    s = s[1:]
+terminal    ID
+terminal    NUM
+terminal    ADD
 
-s = mp.terminals.values() + mp.nonterminals.values()  
-print
-while s:
-    print s," --> ", mp.firsts_of_string(s)
-    s = s[1:]
+G ::=  E
+E ::=  T Et
+Et ::= ADD E
+    |  E
+T ::= ID
+   |  NUM
+'''
 
-stop()
-mp.compute_follows()
-follows = mp.productions.follows
-print " === FOLLOWS === "
-for key in follows:
-    if isinstance(key, Terminal):
-        continue
-    s = "FOLLOWS({}) = {{".format(key)
-    for val in follows[key]:
-        s += "{}, ".format(val)
-    print s + "}"
+grammar3 = '''
+nonterminal Expr S
+nonterminal Expr E
+nonterminal Expr T
 
-print 
-print " === PRODUCTION NUMBERS === "
-productions = mp.productions
-for i in range(len(productions.productions)):
-    print i, productions.productions[i]
+terminal    ID
+terminal    NUM
+terminal    ADD
 
-stop()
+S ::=  E
+E ::=  T
+   |   T ADD E
+T ::= ID
+   |  NUM
+'''
 
-print 
-print " === TESTING STATE MACHINE ==="
+grammar4 = '''
+nonterminal Expr S
+nonterminal Expr E
+nonterminal Expr Et
+nonterminal Expr T
 
-sm = LRStateMachine(mp.terminals.values(), mp.nonterminals.values(), productions)
-print sm
+terminal    ID
+terminal    NUM
+terminal    ADD
 
-sm.generate_states()
+S ::=  E
+E ::=  T Et
+Et ::= ADD T Et
+    | 
+T ::= NUM
+   |  ID
+'''
+
+errors = 0
+def test_grammar(grammar):
+    global errors
+    Symbol.reset()
+    print '=' * 80
+    print '{0:=^80}'.format('   Testing Grammar   ')
+    print '=' * 80
+    print grammar
+    try:
+        print "Creating Lexer"
+        lexer = Lexer(grammar)
+        print "Creating MetaParser"
+        mp    = MetaParser(grammar, lexer)
+    except  Exception as e:
+        print "ERROR:"
+        print e
+        errors += 1
+
+for g in (grammar1, grammar2, grammar3, grammar4):
+    test_grammar(g)
+print "Errors: ", errors

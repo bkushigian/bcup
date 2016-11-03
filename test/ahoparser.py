@@ -1,9 +1,12 @@
 from src.metaparser import MetaParser
-from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
+from src.lexer import Lexer
+from src.tokens import ( Token, TokenId, TokenNum, TokenEOF, 
+                         TokenBinOpAdd, TokenBinOpAst)
 from src.symbols import Terminal, NonTerminal, Production, terminalEOF
 from src.statemachine import Item, State, LLStateMachine
 from src.helper import stop, DEBUG
 from sys import exit
+import traceback
 
 class TokenBinOpAst(Token):
     def __init__(self):
@@ -101,6 +104,7 @@ class Parser(object):
             consumed.append(t)
             if t.name in terminals:
                 return terminals[t.name]
+            print "TERMINALS:", terminals
             print "Parse Error! {} Not in Terminals".format(t.name)
             print type(t)
 
@@ -142,8 +146,9 @@ class Parser(object):
                 print_states()
                 exit()
             elif (X,a) not in table:
-                print "Parse Error: No transition for ({},{})".format(X,a)
                 print_states()
+                print "Parse Error: No transition for ({},{})".format(X,a)
+                traceback.print_stack()
                 exit()
             else:
                 p = table[(X,a)][0]
