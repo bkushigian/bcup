@@ -139,7 +139,7 @@ class Parser(object):
             
 def main():
     prog1 = "id + id + id"
-    with open("test/p4grammar.notcup") as f:
+    with open("test/p4grammar.bcup") as f:
         grammar = f.read()
     parser = Parser(grammar)
     parser.sm.print_table()

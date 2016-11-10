@@ -5,7 +5,7 @@ from src.symbols import Terminal, NonTerminal, Production
 from src.statemachine import Item, State, LRStateMachine
 from src.helper import print_banner
 
-with open("test/grammar.notcup") as f:
+with open("test/grammar.bcup") as f:
     grammar = f.read()
 
 lexer = Lexer(grammar)

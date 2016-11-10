@@ -1,0 +1,28 @@
+nonterminal Expr G
+nonterminal Expr E
+nonterminal Expr Et
+nonterminal Expr T
+
+terminal    ID
+terminal    NUM
+terminal    ADD
+
+G ::=  E
+E ::=  T Et
+Et ::= ADD E
+    |  
+T ::= ID:i
+   |  NUM:n
+   {: 
+      if n < 0:
+        if a b c:
+          if d e f:
+            print 'g'
+          else:
+            print 'h'
+        else:
+          print 'i'
+        print "Error"
+        RESULT = None
+      RESULT = Num(n)
+   :}

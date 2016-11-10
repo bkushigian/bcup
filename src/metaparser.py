@@ -45,11 +45,18 @@ class MetaParser(object):
         self.compute_firsts()
         self.compute_follows()
 
-    def str_to_symbol(self, sym):
+    def str_to_symbol(self, raw_sym):
+        split_sym = raw_sym.split(':')
+        if len(split_sym) == 2:
+            sym, binding = split_sym
+        elif len(split_sym) == 1:
+            sym, binding = raw_sym, None
+        else:
+            raise SyntaxError(raw_sym)
         if sym in self.terminals:
-            return self.terminals[sym]
+            return self.terminals[sym], binding
         if sym in self.nonterminals:
-            return self.nonterminals[sym]
+            return self.nonterminals[sym], binding
         raise ValueError("{}".format(sym))
 
     def compute_firsts(self):
@@ -138,7 +145,8 @@ class MetaParser(object):
                                 if ':}' in line:
                                     current_production.add_code(code)
                                     break
-                                code += line
+                                else:
+                                    code += line + '\n'
 
                             except:
                                 # TODO: Add debug error
@@ -155,12 +163,4 @@ class MetaParser(object):
                         continue
                     except:
                         break
-
-class Generator(object):
-    def __init__(self, terminals, nonterminals, grammar_location):
-        raise NotImplementedError()
-        self.productions  = productions
-        self.terminals    = terminals
-        self.nonterminals = nonterminals
-
 

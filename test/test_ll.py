@@ -5,7 +5,7 @@ from src.statemachine import Item, State, LLStateMachine
 from src.helper import stop, print_banner
 
 
-with open("test/p4grammar.notcup") as f:
+with open("test/p4grammar.bcup") as f:
     grammar = f.read()
 
 lexer = Lexer(grammar)

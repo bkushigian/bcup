@@ -1,12 +1,10 @@
 from src.metaparser import MetaParser
 from src.lexer import Lexer
-from src.tokens import ( Token, TokenId, TokenNum, TokenEOF, 
-                         TokenBinOpAdd, TokenBinOpAst)
+from src.tokens import Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
 from src.symbols import Terminal, NonTerminal, Production, terminalEOF
 from src.statemachine import Item, State, LLStateMachine
-from src.helper import stop, DEBUG
+from src.helper import stop
 from sys import exit
-import traceback
 
 class TokenBinOpAst(Token):
     def __init__(self):
@@ -29,7 +27,8 @@ class MyLexer(Lexer):
         self.token_map = {
             "ID" : TokenId, "ADD" : TokenBinOpAdd, 
             "EOF" : TokenEOF, "AST" : TokenBinOpAst,
-            "LPAREN" : TokenLParen, "RPAREN": TokenRParen
+            "LPAREN" : TokenLParen, "RPAREN": TokenRParen,
+            "NUM" : TokenNum
             }
 
     def load_program(self, program):
@@ -37,14 +36,7 @@ class MyLexer(Lexer):
 
     def lex(self):
         tokens = []
-        if DEBUG: 
-            print "LEX: PROGRAM =", self.program
-            raw_input()
         toks = self.program.split()
-        if DEBUG: 
-            print "TOKS"
-            print toks
-            raw_input()
         for tok in toks:
             if tok.isdigit():
                 tokens.append(TokenNum(tok))
@@ -58,14 +50,8 @@ class MyLexer(Lexer):
                 tokens.append(TokenLParen())
             elif tok == ')':
                 tokens.append(TokenRParen())
-            if DEBUG: 
-                print "TOK:", tok, " TOKEN[-1]", tokens[-1]
 
         tokens.append(TokenEOF())
-        if DEBUG: 
-            print "LEXER: TOKENS",
-            print tokens
-            raw_input()
         self.tokens = iter(tokens)
 
     def next(self):
@@ -104,7 +90,6 @@ class Parser(object):
             consumed.append(t)
             if t.name in terminals:
                 return terminals[t.name]
-            print "TERMINALS:", terminals
             print "Parse Error! {} Not in Terminals".format(t.name)
             print type(t)
 
@@ -116,9 +101,11 @@ class Parser(object):
 
         def print_states():
             print
-            print '=' * 80
+            print
+            print "=" * 80
             print "{0:=^80}".format("   PRODUCTIONS   ")
-            print '=' * 80
+            print "=" * 80
+            print
             print
             print mp.productions
             print "CONSUMED: ", consumed
@@ -131,34 +118,26 @@ class Parser(object):
         stacks.append(capture_state())
         X = stack[-1]
         while X != terminalEOF:
-            if DEBUG:
-                print " --- PARSER.PARSE(): TOP OF WHILE --- "
-                print "    X = {}, a = {}".format(X,a)
-                print "STACK:", stack
             if X == a:
                 stack.pop()
                 action = "match {}".format(str(a))
                 a = next_terminal()
                 stacks.append(capture_state())
             elif X.is_terminal():
-                # error
                 print "Parse Error: Unexpected terminal {}".format(X)
                 print_states()
                 exit()
             elif (X,a) not in table:
-                print_states()
                 print "Parse Error: No transition for ({},{})".format(X,a)
-                traceback.print_stack()
+                print_states()
                 exit()
             else:
                 p = table[(X,a)][0]
-                # XXX: Next block is for debuggin
                 if len(table[(X,a)]) > 1:
                     print "ERROR: TABLE NON UNIT LENGTH"
                     raw_input()
                 rhs = list(p.rhs)
-                if DEBUG:
-                    print p  # Output production
+                print p  # Output production
                 stack.pop()
                 while rhs:
                     stack.append(rhs.pop())
@@ -171,20 +150,13 @@ class Parser(object):
         print_states()
             
 def main():
-    prog1 = "id + id * id"
-    with open("test/ahogrammar.bcup") as f:
+    prog1 = "id + 3"
+    from os import path
+    dir = path.dirname(path.realpath(__file__))
+    gpath = path.join(dir, "grammar.bcup") 
+    with open(gpath) as f:
         grammar = f.read()
-    if DEBUG: 
-        print "CREATING PARSER"
     parser = Parser(grammar)
-    if DEBUG: 
-        print
-        print
-        print "=" * 80
-        print "{0:=^80}".format("   BEGINNING PARSE   ")
-        print "=" * 80
-        print
-        print
     parser.sm.print_table()
     parser.parse(prog1)
 

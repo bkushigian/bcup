@@ -6,15 +6,44 @@ class Production(object):
     meta information (such as the production number) and the associated code
     string that will build the parse tree.'''
     _name = 'Production'
-    def __init__(self, lhs, rhs):
+    def __init__(self, lhs, rhs, code = ''):
         assert isinstance(lhs, NonTerminal), "lhs {} not an instance of NonTerminal".format(lhs)
         self.lhs = lhs
-        self.rhs = tuple(rhs)   # rhs is a tuple of Symbols
-        self.code = ""
+# TODO: rhs is currently a list of (type,binding) tuples, but this expects a
+# list of types
+        self.rhs, self.bindings = (), ()
+        if len(rhs):
+            self.rhs, self.bindings = zip(*rhs)   # rhs is a tuple of Symbols
+
+        self.code = code
         self.num = -1
 
     def add_code(self, code):
-        self.code = code
+        if not code:
+            return
+
+        print "Production code:"
+        print code
+        lines = code.split('\n')
+        indent = '  ' # Indent String
+        stack = [0]    # Stack for indent depths
+        newcode = ''     # Will rewrite code
+
+        # XXX: THIS DOES NOT CHECK FOR GOOD WHITE SPACE FORMATTING
+        # TODO: Check for white space formatting
+        for line in lines:
+            cind = len(line) - len(line.lstrip())
+            print stack
+            print cind
+            if cind > stack[-1]:
+                stack.append(cind)
+            else:
+                while stack and cind < stack[-1]:
+                    stack.pop()
+            newcode += '{}\n'.format((indent * (len(stack)-1) ) + line.strip())
+        self.code = newcode
+        print "NEWCODE"
+        print newcode
 
     def __repr__(self):
         return "{} --> {}".format(str(self.lhs), " ".join(map(str,self.rhs)))

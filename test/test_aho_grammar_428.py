@@ -14,7 +14,7 @@ class MyLexer(Lexer):
             "LPAREN" : TokenLParen, "RPAREN": TokenRParen}
     
 
-with open("test/aho_grammar_4_28.notcup") as f:
+with open("test/aho_grammar_4_28.bcup") as f:
     grammar = f.read()
 
 lexer = MyLexer(grammar)
