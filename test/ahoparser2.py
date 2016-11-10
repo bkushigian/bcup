@@ -192,6 +192,7 @@ class Parser(object):
         print_states()
             
 def main():
+    # List of sentences in the language defined by grammar test/ahogrammar2.bcup
     prog1 = "id + id"
     prog2 = "id * id"
     prog3 = "a + b * c"
