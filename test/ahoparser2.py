@@ -1,5 +1,5 @@
 from src.metaparser import MetaParser
-from src.lexer import Lexer
+from src.lexer.lexer import Lexer
 from src.tokens import ( Token, TokenId, TokenNum, TokenEOF, 
                          TokenBinOpAdd, TokenBinOpAst)
 from src.symbols import Terminal, NonTerminal, Production, terminalEOF
@@ -217,6 +217,7 @@ def main():
         print
         print
     for p in programs:
+        print "INPUT:", p
         parser = Parser(grammar)
         parser.sm.print_table()
         print 

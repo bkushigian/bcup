@@ -10,8 +10,7 @@ class Lexer(object):
     ''' Trivial lexer, can be overridden, this adds id's and nums'''
     def __init__(self, program = None):
         self.program = program
-        self.token_map = {"NUM" : TokenNum, "ID" : TokenId, 
-                "ADD" : TokenBinOpAdd, "EOF" : TokenEOF }
+        self.token_map = {"NUM" : TokenNum, "ID" : TokenId, "ADD" : TokenBinOpAdd, "EOF" : TokenEOF }
         if self.program:
             self.lex()
 
@@ -21,14 +20,16 @@ class Lexer(object):
     def lex(self):
         ''' This splits the input file into strings. This should be overridden
         for any grammars as it presupposes that the grammar is white-space
-        seperated.
+        seperated (ie, this is a terrible lexer).
         '''
+        #TODO: Remove lex and use __iter__(). Thus, no need for precomputation.
         tokens = []
         if DEBUG:
             print "LEX: PROGRAM =", self.program
             raw_input()
 
         toks = self.program.split()
+
         for tok in toks:
             if tok.isdigit():
                 tokens.append(TokenNum(tok))
@@ -49,3 +50,6 @@ class Lexer(object):
         talks to it.
         '''
         return self.tokens.next()
+
+    def __iter__(self):
+        pass

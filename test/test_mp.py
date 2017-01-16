@@ -1,5 +1,5 @@
 from src.metaparser import MetaParser
-from src.lexer import Lexer
+from src.lexer.lexer import Lexer
 from src.tokens import *
 from src.symbols import Terminal, NonTerminal, Production
 from src.statemachine import Item, State, LRStateMachine

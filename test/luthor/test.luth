@@ -1,0 +1,20 @@
+{%
+ws    = "[ \t\n\r]"
+int   = "\d+"
+str   = "[\"]|[^\"]"
+x = 33
+%}
+
+ws        # Pass
+int
+
+{: 
+RESULT = IntToken(int(MATCHED))
+:}
+
+string 
+{: 
+for i in range(100):
+    print i
+RESULT = StringToken(MATCHED[1:-1])
+:}
