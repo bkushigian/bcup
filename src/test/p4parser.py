@@ -1,25 +1,13 @@
-from src.metaparser import MetaParser
-from src.lexer.lexer import Lexer
-from src.tokens import Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
-from src.symbols import Terminal, NonTerminal, Production, terminalEOF
-from src.statemachine import Item, State, LLStateMachine
-from src.helper import stop
+from cup.parser.metaparser import MetaParser
+from cup.lexer.lexer import Lexer
+from cup.parser.tokens import ( Token, TokenId, TokenNum, TokenEOF, 
+                         TokenBinOpAdd, TokenLParen, TokenRParen,
+                         TokenBinOpAst)
+from cup.parser.symbols import Terminal, NonTerminal, Production, terminalEOF
+from cup.parser.statemachine import Item, State, LLStateMachine
+from cup.utils.helper import stop
 from sys import exit
 
-class TokenBinOpAst(Token):
-    def __init__(self):
-        self.name = "AST"
-        self.symbol = "*"
-
-class TokenLParen(Token):
-    def __init__(self):
-        self.name = "LPAREN"
-        self.symbol = "("
-
-class TokenRParen(Token):
-    def __init__(self):
-        self.name = "RPAREN"
-        self.symbol = ")"
 
 class MyLexer(Lexer):
     def __init__(self, program = None):
@@ -124,6 +112,7 @@ class Parser(object):
                 a = next_terminal()
                 stacks.append(capture_state())
             elif X.is_terminal():
+                # error
                 print "Parse Error: Unexpected terminal {}".format(X)
                 print_states()
                 exit()
@@ -137,7 +126,6 @@ class Parser(object):
                     print "ERROR: TABLE NON UNIT LENGTH"
                     raw_input()
                 rhs = list(p.rhs)
-                print p  # Output production
                 stack.pop()
                 while rhs:
                     stack.append(rhs.pop())
@@ -150,11 +138,8 @@ class Parser(object):
         print_states()
             
 def main():
-    prog1 = "id + 3"
-    from os import path
-    dir = path.dirname(path.realpath(__file__))
-    gpath = path.join(dir, "grammar.bcup") 
-    with open(gpath) as f:
+    prog1 = "id + id + id"
+    with open("test/p4grammar.bcup") as f:
         grammar = f.read()
     parser = Parser(grammar)
     parser.sm.print_table()

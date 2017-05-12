@@ -1,9 +1,9 @@
-from src.metaparser import MetaParser
-from src.lexer.lexer import Lexer
-from src.tokens import *
-from src.symbols import Terminal, NonTerminal, Production
-from src.statemachine import Item, State, LRStateMachine
-from src.helper import print_banner
+from cup.lexer.lexer import Lexer
+from cup.parser.metaparser import MetaParser
+from cup.parser.tokens import *
+from cup.parser.symbols import Terminal, NonTerminal, Production
+from cup.parser.statemachine import Item, State, LRStateMachine
+from cup.utils.helper import print_banner
 
 with open("test/grammar.bcup") as f:
     grammar = f.read()

@@ -1,4 +1,4 @@
-from src.symbols import (Symbol, Terminal, NonTerminal, Symbols, Terminals,
+from cup.parser.symbols import (Symbol, Terminal, NonTerminal, Symbols, Terminals,
                         NonTerminals, Production, Productions)
 
 t1 = Terminal("ADD")

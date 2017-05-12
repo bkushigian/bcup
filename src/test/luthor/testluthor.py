@@ -1,5 +1,5 @@
-from src.lexer.luthor import LexLuthor, LexerGenerator, newluthor, newlex
-from src.helper import error, success, failure, info, banner, GREEN
+from cup.lexer.luthor import LexLuthor, LexerGenerator, newluthor, newlex
+from cup.parser.helper import error, success, failure, info, banner, GREEN
 
 def test_LexLuthorInit():
     luthor = newluthor()

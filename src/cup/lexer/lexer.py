@@ -3,8 +3,8 @@ These are filler classes for tests and can (should) be overridden.
 This lexer class is the default for parsing a grammar and can be extended to
 parse different forms of grammars.'''
 
-from src.helper import DEBUG
-from src.tokens import *
+from cup.utils.helper import DEBUG
+from cup.parser.tokens import *
 
 class Lexer(object):
     ''' Trivial lexer, can be overridden, this adds id's and nums'''

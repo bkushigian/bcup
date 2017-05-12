@@ -1,9 +1,9 @@
-from src.metaparser import MetaParser
-from src.lexer.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
-from src.tokens import *
-from src.symbols import Terminal, NonTerminal, Production
-from src.statemachine import Item, State, LLStateMachine
-from src.helper import stop, print_banner
+from cup.lexer.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
+from cup.parser.metaparser import MetaParser
+from cup.parser.tokens import *
+from cup.parser.symbols import Terminal, NonTerminal, Production
+from cup.parser.statemachine import Item, State, LLStateMachine
+from cup.utils.helper import stop, print_banner
 
 class MyLexer(Lexer):
     def __init__(self, program = None):

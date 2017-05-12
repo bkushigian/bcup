@@ -1,8 +1,8 @@
-from src.metaparser import MetaParser
-from src.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
-from src.symbols import Terminal, NonTerminal, Production, Symbol
-from src.statemachine import Item, State, LRStateMachine
-from src.helper import stop
+from cup.lexer.lexer import Lexer, Token, TokenId, TokenNum, TokenEOF, TokenBinOpAdd
+from cup.parser.metaparser import MetaParser
+from cup.parser.symbols import Terminal, NonTerminal, Production, Symbol
+from cup.parser.statemachine import Item, State, LRStateMachine
+from cup.utils.helper import stop
 
 
 grammar1 = '''nonterminal Expr E

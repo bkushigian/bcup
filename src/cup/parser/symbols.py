@@ -1,5 +1,5 @@
-from src.helper import accumulator, stop
-from src.lexer.lexer import Token
+from cup.utils.helper import accumulator, stop
+from cup.lexer.lexer import Token
 
 class Production(object):
     ''' The production class holds a single grammar production, along with some

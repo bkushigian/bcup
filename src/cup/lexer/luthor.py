@@ -1,11 +1,11 @@
 ''' Generate a lexer from a luthor file input '''
 import re
 from sys import exit
-from src.lexer.lexer import Lexer
-from src.lexer.metatoken import ( MetaToken, StringToken, IntToken, CodeToken,
+from cup.lexer.lexer import Lexer
+from cup.lexer.token import ( MetaToken, StringToken, IntToken, CodeToken,
                                     ClassToken, NameToken, SectionToken,
                                     EqToken)
-from src.helper import accumulator, error, failure, success, info
+from cup.utils.helper import accumulator, error, failure, success, info
 
 DEBUG = True                # For debug. Duh
 

@@ -1,9 +1,10 @@
 ''' statemachine.py: Represents the LR(1) state machine. Generated from output
 of MetaParser. '''
-from src.metaparser import MetaParser
-from src.helper import accumulator, stop, DEBUG
-from src.symbols import ( Symbol, Terminal, NonTerminal, Production,
-                          Productions, startSymbol, terminalEOF, emptyString)
+from cup.parser.metaparser import MetaParser
+from cup.utils.helper      import accumulator, stop, DEBUG
+from cup.parser.symbols    import ( Symbol, Terminal, NonTerminal, Production,
+                                    Productions, startSymbol, terminalEOF,
+                                    emptyString)
 from sys import exit
 
 class Action(object):

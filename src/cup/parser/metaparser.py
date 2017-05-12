@@ -1,5 +1,5 @@
-from src.helper import accumulator
-from src.symbols import ( Symbol, Terminal, NonTerminal, 
+from cup.utils.helper import accumulator
+from cup.parser.symbols import ( Symbol, Terminal, NonTerminal, 
                           Productions, startSymbol, terminalEOF,
                           Terminals, NonTerminals)
 
