@@ -1,3 +1,11 @@
+''' 
+MetaTokens are used by lexing generator and shouldn't be used by client
+programs. These help with lexing the luthor file.
+
+Eventually this will be obsolete (we will be building our lexing generator with
+normal token classes)
+'''
+
 class MetaToken(object):
     ''' Token for LexerGenerator '''
     def __init__(self, value):
@@ -49,9 +57,7 @@ class SectionToken(MetaToken):
             value = value[2:]           # Strip leading delimiter
             index = value.index('%}')   # Get index of trailing delimiter
             value = value[:index]       # Strip trailing delimiter
-            # TODO: Inefficient
-            while value and value[0] in (' \t\n\r'): # Strip leading whitespace
-                value = value[1:]
+            value = value.lstrip()      # Get rid of leading white space
         except Exception as e:
             # TODO: Make more expressive
             print "Lex error", e
