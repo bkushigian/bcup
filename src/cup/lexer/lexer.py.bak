@@ -28,8 +28,8 @@ class Lexer(object):
         #TODO: Remove lex and use __iter__(). Thus, no need for precomputation.
         tokens = []
         if DEBUG:
-            print("LEX: PROGRAM =", self.program)
-            input()
+            print "LEX: PROGRAM =", self.program
+            raw_input()
 
         toks = self.program.split()
 
@@ -43,16 +43,16 @@ class Lexer(object):
 
         tokens.append(tokenEOF)
         if DEBUG:
-            print(tokens)
-            input()
+            print tokens
+            raw_input()
         self.tokens = iter(tokens)
 
-    def __next__(self):
+    def next(self):
         ''' If lex is overridden, this needs to be rewritten to. This is the
         main function defined for the Lexer class and is how the outside world
         talks to it.
         '''
-        return next(self.tokens)
+        return self.tokens.next()
 
     def __iter__(self):
         pass

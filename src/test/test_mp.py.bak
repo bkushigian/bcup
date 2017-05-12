@@ -12,13 +12,13 @@ lexer = Lexer(grammar)
 mp    = MetaParser(grammar, lexer)
 
 print_banner("TERMINALS")
-print(mp.terminals)
+print mp.terminals
 print_banner("NONTERMINALS")
-print(mp.nonterminals)
-print(mp.token_map)
+print mp.nonterminals
+print mp.token_map
 
 print_banner("PRODUCTIONS")
-print(mp.productions)
+print mp.productions
 
 mp.compute_firsts()
 mp.compute_follows()
@@ -31,7 +31,7 @@ for key in firsts:
     s = "FIRST({}) = {{".format(key)
     for val in firsts[key]:
         s += "{}, ".format(val)
-    print(s + "}")
+    print s + "}"
 
 
 print_banner("FOLLOWS")
@@ -41,10 +41,10 @@ for key in follows:
     s = "FOLLOWS({}) = {{".format(key)
     for val in follows[key]:
         s += "{}, ".format(val)
-    print(s + "}")
+    print s + "}"
 
 print_banner("TESTING STATE MACHINE")
 sm = LRStateMachine(mp)
-print(sm)
+print sm
 
 sm.generate_states()

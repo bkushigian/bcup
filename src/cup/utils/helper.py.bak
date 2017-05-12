@@ -21,30 +21,30 @@ def stop(message = None):
     if CONTINUE_WHEN == breaknum:
         CONTINUE = False
     if not CONTINUE:
-        c = input(message)
+        c = raw_input(message)
         if c.lower()  in ('c', 'continue'):
             CONTINUE = True
         elif c.lower() in ('q', 'quit', 'e'):
-            print("EXITING")
+            print "EXITING"
             exit()
         elif c.lower().startswith("bp"):
             try:
                 CONTINUE_WHEN = int(c[2:].strip())
                 CONTINUE = True
             except:
-                print("Invalid Break Point: {}".format(c))
+                print "Invalid Break Point: {}".format(c)
 
     breaknum += 1
 
 def print_banner(message, filler = '=', padding = 1, width = 60, word_padding = '   '):
     message = word_padding + message + word_padding
     for i in range(padding):
-        print()
-    print('{0: ^80}'.format(filler * width))
-    print('{0: ^80}'.format( ('{0:' + filler + '^{1}}').format(message, width)))
-    print('{0: ^80}'.format(filler * width))
+        print
+    print '{0: ^80}'.format(filler * width)
+    print '{0: ^80}'.format( ('{0:' + filler + '^{1}}').format(message, width))
+    print '{0: ^80}'.format(filler * width)
     for i in range(padding):
-        print()
+        print
 
 def accumulator(start_value = 0):
     ''' accumulator returns a generator that generates numbers, starting with

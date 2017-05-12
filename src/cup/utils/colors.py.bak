@@ -41,7 +41,7 @@ FOREGROUNDS = [FG_WHITE_DARK,
               FG_BLUE_LIGHT, 
               FG_PURPLE_LIGHT, 
               FG_AQUA_LIGHT,
-              FG_GREY_LIGHT] = [str(i) for i in (list(range(29,38)) + list(range(89,98)))]
+              FG_GREY_LIGHT] = [str(i) for i in (range(29,38) + range(89,98))]
 
 ### Shortcuts 
 [WHITE, BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, AQUA, GREY] = ['WHITE', 
@@ -65,7 +65,7 @@ BACKGROUNDS = [BG_WHITE_DARK,
               BG_BLUE_LIGHT, 
               BG_PURPLE_LIGHT, 
               BG_AQUA_LIGHT,
-              BG_GREY_LIGHT] = [str(i) for i in (list(range(39,48)) + list(range(99,108)))]
+              BG_GREY_LIGHT] = [str(i) for i in (range(39,48) + range(99,108))]
 
 STR_MAP = {}
 for color in COLORS:
@@ -133,17 +133,17 @@ def state_str():
 def open_state():
     global STATE_OPEN
     if not STATE_OPEN:
-        print(state_str(), end=' ')
+        print state_str(),
         STATE_OPEN = True
 
 def close_state():
     global STATE_OPEN
     if STATE_OPEN:
-        print(ENDSTR, end=' ')
+        print ENDSTR,
         STATE_OPEN = False
 
 def echo(s, attrs=[]):
-    print(prefix(attrs) + s + ENDSTR)
+    print prefix(attrs) + s + ENDSTR
 
 def echo_lines(s, attrs = []):
     lines = s.split('\n')
@@ -154,7 +154,7 @@ def echo_lines(s, attrs = []):
 
 def echos(s):
     res = state_str() + s + ENDSTR
-    print(res)
+    print res
 
 def colorstr(s, cs = []):
     return prefix(cs) + s + suffix()
@@ -263,9 +263,9 @@ def failure(s, ind = 0, prefix = "[-] "):
 def banner(message, filler = '=', padding = 1, width = 60, word_padding = '   ', attrs = []):
     message = word_padding + message + word_padding
     for i in range(padding):
-        print()
+        print
     echo('{0: ^80}'.format(filler * width ), attrs)
     echo('{0: ^80}'.format( ('{0:' + filler + '^{1}}').format(message, width)), attrs)
     echo('{0: ^80}'.format(filler * width ), attrs)
     for i in range(padding):
-        print()
+        print

@@ -83,20 +83,20 @@ errors = 0
 def test_grammar(grammar):
     global errors
     Symbol.reset()
-    print('=' * 80)
-    print('{0:=^80}'.format('   Testing Grammar   '))
-    print('=' * 80)
-    print(grammar)
+    print '=' * 80
+    print '{0:=^80}'.format('   Testing Grammar   ')
+    print '=' * 80
+    print grammar
     try:
-        print("Creating Lexer")
+        print "Creating Lexer"
         lexer = Lexer(grammar)
-        print("Creating MetaParser")
+        print "Creating MetaParser"
         mp    = MetaParser(grammar, lexer)
     except  Exception as e:
-        print("ERROR:")
-        print(e)
+        print "ERROR:"
+        print e
         errors += 1
 
 for g in (grammar1, grammar2, grammar3, grammar4):
     test_grammar(g)
-print("Errors: ", errors)
+print "Errors: ", errors

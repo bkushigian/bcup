@@ -42,8 +42,8 @@ class MyLexer(Lexer):
         tokens.append(TokenEOF())
         self.tokens = iter(tokens)
 
-    def next(self):
-        return self.tokens.next()
+    def __next__(self):
+        return next(self.tokens)
 
 
 class Parser(object):
@@ -64,7 +64,7 @@ class Parser(object):
         mp           = self.mp
         stack        = [terminalEOF, mp.start]  # $, S
         table        = self.table
-        next_token   = self.lexer.next
+        next_token   = self.lexer.__next__
         terminals    = mp.terminals
         terminals['EOF'] = terminalEOF
         consumed     = []    # Keep track of consumed characters
@@ -78,8 +78,8 @@ class Parser(object):
             consumed.append(t)
             if t.name in terminals:
                 return terminals[t.name]
-            print "Parse Error! {} Not in Terminals".format(t.name)
-            print type(t)
+            print("Parse Error! {} Not in Terminals".format(t.name))
+            print(type(t))
 
         def capture_state():
             return (list(stack), str(a), str(action))
@@ -88,18 +88,18 @@ class Parser(object):
             return ', '.join([str(i) for i in reversed(s)])
 
         def print_states():
-            print
-            print
-            print "=" * 80
-            print "{0:=^80}".format("   PRODUCTIONS   ")
-            print "=" * 80
-            print
-            print
-            print mp.productions
-            print "CONSUMED: ", consumed
-            print "STACK                         , TERMINAL, ACTION"
+            print()
+            print()
+            print("=" * 80)
+            print("{0:=^80}".format("   PRODUCTIONS   "))
+            print("=" * 80)
+            print()
+            print()
+            print(mp.productions)
+            print("CONSUMED: ", consumed)
+            print("STACK                         , TERMINAL, ACTION")
             for s in stacks:
-                print "{0: >29} | {1: <8} | {2: <8}".format(str_stack(s[0]), s[1], s[2])
+                print("{0: >29} | {1: <8} | {2: <8}".format(str_stack(s[0]), s[1], s[2]))
 
 
         a = next_terminal()
@@ -113,18 +113,18 @@ class Parser(object):
                 stacks.append(capture_state())
             elif X.is_terminal():
                 # error
-                print "Parse Error: Unexpected terminal {}".format(X)
+                print("Parse Error: Unexpected terminal {}".format(X))
                 print_states()
                 exit()
             elif (X,a) not in table:
-                print "Parse Error: No transition for ({},{})".format(X,a)
+                print("Parse Error: No transition for ({},{})".format(X,a))
                 print_states()
                 exit()
             else:
                 p = table[(X,a)][0]
                 if len(table[(X,a)]) > 1:
-                    print "ERROR: TABLE NON UNIT LENGTH"
-                    raw_input()
+                    print("ERROR: TABLE NON UNIT LENGTH")
+                    input()
                 rhs = list(p.rhs)
                 stack.pop()
                 while rhs:

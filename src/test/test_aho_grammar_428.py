@@ -21,14 +21,14 @@ lexer = MyLexer(grammar)
 mp    = MetaParser(grammar, lexer, False)
 
 print_banner( "   TERMINALS   ")
-print mp.terminals
+print(mp.terminals)
 print_banner( "   NONTERMINALS   ")
-print mp.nonterminals
+print(mp.nonterminals)
 print_banner( "   TOKEN MAP   ")
-print mp.token_map
+print(mp.token_map)
 
 print_banner( "   PRODUCTIONS   ")
-print mp.productions
+print(mp.productions)
 
 mp.compute_firsts()
 mp.compute_follows()
@@ -41,7 +41,7 @@ for key in firsts:
     s = "FIRST({}) = {{".format(key)
     for val in firsts[key]:
         s += "{}, ".format(val)
-    print s + "}"
+    print(s + "}")
 
 print_banner("   FOLLOWS   ")
 for key in follows:
@@ -50,11 +50,11 @@ for key in follows:
     s = "FOLLOWS({}) = {{".format(key)
     for val in follows[key]:
         s += "{}, ".format(val)
-    print s + "}"
+    print(s + "}")
 
 
-print 
-print " === TESTING STATE MACHINE ==="
+print() 
+print(" === TESTING STATE MACHINE ===")
 
 sm = LLStateMachine(mp)
 sm.print_table()

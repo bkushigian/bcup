@@ -107,7 +107,7 @@ class MetaParser(object):
                 while ';' not in terms:     # Assumes ';' on own line
                     if terms == []:
                         try:
-                            line = next(lines)
+                            line = lines.next()
                             continue
                         except:
                             break
@@ -127,12 +127,12 @@ class MetaParser(object):
                             else:
                                 self.start = current_nt
                             # self.productions.add_start(self.start)
-                        rhs = list(map(self.str_to_symbol, list(terms[2:])))
+                        rhs = map(self.str_to_symbol, list(terms[2:]))
 
                         current_production = current_nt.add_production( rhs )
 
                     elif terms[0] == '|':
-                        rhs = list(map(self.str_to_symbol, list(terms[1:])))
+                        rhs = map(self.str_to_symbol, list(terms[1:]))
                         current_production = current_nt.add_production( rhs )
 
                     elif terms[0] == '{:':
@@ -141,7 +141,7 @@ class MetaParser(object):
                         code = ""
                         while True:         # Get code for production
                             try:
-                                line = next(lines)
+                                line = lines.next()
                                 if ':}' in line:
                                     current_production.add_code(code)
                                     break
@@ -150,15 +150,15 @@ class MetaParser(object):
 
                             except:
                                 # TODO: Add debug error
-                                print("Parse Error!")
+                                print "Parse Error!"
                                 break
                     else:
-                        print("Error on line:")
-                        print(line)
+                        print "Error on line:"
+                        print line
 
                     # Done with line, get next line or break if done
                     try:
-                        line = next(lines)
+                        line = lines.next()
                         terms = line.split()
                         continue
                     except:

@@ -13,7 +13,7 @@ class Production(object):
 # list of types
         self.rhs, self.bindings = (), ()
         if len(rhs):
-            self.rhs, self.bindings = list(zip(*rhs))   # rhs is a tuple of Symbols
+            self.rhs, self.bindings = zip(*rhs)   # rhs is a tuple of Symbols
 
         self.code = code
         self.num = -1
@@ -22,8 +22,8 @@ class Production(object):
         if not code:
             return
 
-        print("Production code:")
-        print(code)
+        print "Production code:"
+        print code
         lines = code.split('\n')
         indent = '  ' # Indent String
         stack = [0]    # Stack for indent depths
@@ -33,8 +33,8 @@ class Production(object):
         # TODO: Check for white space formatting
         for line in lines:
             cind = len(line) - len(line.lstrip())
-            print(stack)
-            print(cind)
+            print stack
+            print cind
             if cind > stack[-1]:
                 stack.append(cind)
             else:
@@ -42,8 +42,8 @@ class Production(object):
                     stack.pop()
             newcode += '{}\n'.format((indent * (len(stack)-1) ) + line.strip())
         self.code = newcode
-        print("NEWCODE")
-        print(newcode)
+        print "NEWCODE"
+        print newcode
 
     def __repr__(self):
         return "{} --> {}".format(str(self.lhs), " ".join(map(str,self.rhs)))
@@ -90,7 +90,7 @@ class Productions(object):
             self.nonterminals += prod.lhs
             self._production_map[prod.lhs] = []
         self._production_map[prod.lhs].append(prod.rhs)
-        prod.num = next(self.accum)
+        prod.num = self.accum.next()
         self._productions.append(prod)
         for sym in prod.rhs:
             if isinstance(sym, Terminal):
@@ -251,11 +251,11 @@ class Productions(object):
         for key in self.nonterminals:
             if s:
                 s += '\n'
-            s += "({}) {} ::= {}".format(next(accum), key,
+            s += "({}) {} ::= {}".format(accum.next(), key,
                         self._production_map[key][0])
             l = len(str(key))
             for p in self._production_map[key][1:]:
-                s += "\n({}) {}  |  {}".format(next(accum), l * ' ', p)
+                s += "\n({}) {}  |  {}".format(accum.next(), l * ' ', p)
             
         return s 
 
@@ -292,7 +292,7 @@ class Terminal(Symbol):
         self._name = 'Terminal'
         self.name = name
         if self in self.symbolSet:
-            print("*** ERROR - {} already created".format(self))
+            print "*** ERROR - {} already created".format(self)
         self.symbolSet.add(self)
         self.firsts   = [self]
         self.follows  = []
@@ -328,7 +328,7 @@ class NonTerminal(Symbol):
         self.full_print = False
 
         if self in self.symbolSet:
-            print("*** ERROR - {} already created".format(self))
+            print "*** ERROR - {} already created".format(self)
 
         self.symbolSet.add(self)
         self.firsts   = []     # FIRST(self)

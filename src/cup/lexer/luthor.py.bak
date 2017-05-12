@@ -129,7 +129,7 @@ class MatchEntry(object):
         code: code to execute on match
         '''
         self.code       = code
-        self.num        = next(self.counter)
+        self.num        = self.counter.next()
         self.name = 'e{}'.format(self.num)
         if token.type == 'STRING':
             self.pattern = '(?<{}>{})'.format(self.name, token.value)
@@ -188,7 +188,7 @@ class LexerGenerator(object):
         nameCounter = accumulator(0)
         def newName():
             ''' Give unique names for each entry '''
-            return 'e{}'.format(next(nameCounter))
+            return 'e{}'.format(nameCounter.next())
 
         def processEntry(me):
             ''' Process a match entry, forming a regex string '''
@@ -200,7 +200,7 @@ class LexerGenerator(object):
 
         for e in ordering:   
             if isinstance(e, MatchEntry):
-                print('Match Entry:', e, e.code)
+                print 'Match Entry:', e, e.code
                 
 
 
@@ -226,12 +226,12 @@ class LexerGenerator(object):
 
             elif token.type == 'NAME' or token.type == 'STRING':
                 try:
-                    next_token = next(lexiter)
+                    next_token = lexiter.next()
                 except Exception as e:
                     ordering.append(MatchEntry(token))
                     break    # Exit the loop, no more tokens
 
-                input( "NEXT_TOKEN:" + str( next_token))
+                raw_input( "NEXT_TOKEN:" + str( next_token))
                 if next_token.type == 'CODE':
                     ordering.append(MatchEntry(token, next_token))
 
@@ -243,7 +243,7 @@ class LexerGenerator(object):
 
 # FOR DEBUG
 def newluthor():
-    print("New luthor being generated...")
+    print "New luthor being generated..."
     with open("test/luthor/test.luth") as f:
         program = f.read()
     luthor = LexLuthor(program)

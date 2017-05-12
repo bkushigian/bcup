@@ -35,7 +35,7 @@ class CodeToken(MetaToken):
                 value = value[1:]
         except Exception as e:
             # TODO: Make more expressive
-            print("Lex error", e)
+            print "Lex error", e
         self.value = value
         self.type = 'CODE'
 
@@ -60,7 +60,7 @@ class SectionToken(MetaToken):
             value = value.lstrip()      # Get rid of leading white space
         except Exception as e:
             # TODO: Make more expressive
-            print("Lex error", e)
+            print "Lex error", e
 
         self.value = value
         self.type = "SECTION"

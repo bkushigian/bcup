@@ -26,7 +26,7 @@ def test_LexerGenerator():
 
 def main():
     gs = globals()
-    for name in list(gs.keys()):
+    for name in gs.keys():
         if name.startswith('test_'):
             f = gs[name]
             f()
