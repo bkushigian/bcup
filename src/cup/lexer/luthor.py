@@ -3,8 +3,8 @@ import re
 from sys import exit
 from cup.lexer.lexer import Lexer
 from cup.lexer.metatoken import ( MetaToken, StringToken, IntToken, CodeToken,
-                                    ClassToken, NameToken, SectionToken,
-                                    EqToken)
+                                 ClassToken, NameToken, SectionToken,
+                                 EqToken)
 from cup.utils.helper import accumulator, error, failure, success, info
 
 DEBUG = True                # For debug. Duh
@@ -50,17 +50,25 @@ class LexLuthor(Lexer):
     ''' 
     Lexically analyze a luthor file. Yes, this class name is precisely why I
     named my lexing module luthor.
+
+    program: a plain text representation of a program to lex into tokens
     '''
 
     def __init__(self, program):
         if DEBUG:
             info("Initializing LexLuthor...")
         self._program = program
+
+        # XXX: Not sure what this does; reeks of some stack overflow shit
+        # For now, to get this working we are going to just make an if/elif
+        # check to look through all the different regex patterns. This is
+        # inefficient but is easier to reason about.
         blank_pattern = r'(?P<{0}>^{1})'
         self._meta_pattern  = re.compile('|'.join( 
             [blank_pattern.format( str_names[s], s) for s in pattern_strs]))
         self._groupindex = self._meta_pattern.groupindex
         self._queue = []
+
         if DEBUG:
             success("Completed LexLuthor Initialization")
 
