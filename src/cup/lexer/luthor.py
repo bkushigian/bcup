@@ -73,15 +73,15 @@ class LexLuthor(Lexer):
             success("Completed LexLuthor Initialization")
 
     def __iter__(self):
-        program    = str(self._program)
-        groupindex = self._groupindex
+        program = str(self._program)
+
+        groupindex = self._groupindex     # XXX: What is this??
         info("Creating LexLuthor iter")
         while program:
             if DEBUG:
                 info("LexLuthor.__iter__(): looking for next symbol",1)
             if self._queue:
-                result = self._queue[0]
-                self._queue = self._queue[1:]
+                result = self._queue.pop(0)
                 if DEBUG:
                     success("LexLuthor.__iter__(): _queue non-empty, yielding {}".format(result), ind = 2)
                 yield result
