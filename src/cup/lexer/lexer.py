@@ -10,7 +10,10 @@ class Lexer(object):
     ''' Trivial lexer, can be overridden, this adds id's and nums'''
     def __init__(self, program = None):
         self.program = program
-        self.token_map = {"NUM" : TokenNum, "ID" : TokenId, "ADD" : TokenBinOpAdd, "EOF" : TokenEOF }
+        self.token_map = {"NUM" : TokenNum, 
+                          "ID"  : TokenId, 
+                          "ADD" : TokenBinOpAdd, 
+                          "EOF" : TokenEOF }
         if self.program:
             self.lex()
 
