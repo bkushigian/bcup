@@ -2,7 +2,7 @@
 import re
 from sys import exit
 from cup.lexer.lexer import Lexer
-from cup.lexer.token import ( MetaToken, StringToken, IntToken, CodeToken,
+from cup.lexer.metatoken import ( MetaToken, StringToken, IntToken, CodeToken,
                                     ClassToken, NameToken, SectionToken,
                                     EqToken)
 from cup.utils.helper import accumulator, error, failure, success, info

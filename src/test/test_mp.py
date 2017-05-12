@@ -1,6 +1,6 @@
 from cup.lexer.lexer import Lexer
 from cup.parser.metaparser import MetaParser
-from cup.parser.tokens import *
+from cup.lexer.tokens import *
 from cup.parser.symbols import Terminal, NonTerminal, Production
 from cup.parser.statemachine import Item, State, LRStateMachine
 from cup.utils.helper import print_banner

@@ -1,6 +1,6 @@
 from cup.lexer.lexer import Lexer
 from cup.parser.metaparser import MetaParser
-from cup.parser.tokens import ( Token, TokenId, TokenNum, TokenEOF, 
+from cup.lexer.tokens import ( Token, TokenId, TokenNum, TokenEOF, 
                          TokenBinOpAdd, TokenBinOpAst)
 from cup.parser.symbols import Terminal, NonTerminal, Production, terminalEOF
 from cup.parser.statemachine import Item, State, LLStateMachine
