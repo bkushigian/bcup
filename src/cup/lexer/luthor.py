@@ -12,17 +12,26 @@ DEBUG = True                # For debug. Duh
 # For parsing lex file
 s_ws            = r'(\s)+'
 s_comment       = r'#.*'
-s_str           = r'"([\"]|[^"])*"'
+s_str           = r'"(\\\"|[^"])*"'
 s_class         = r'[A-Z]\w*'
 s_name          = r'[a-z]\w*'
-s_code          = r'(\{:)(.|[\n])*(:\})'
-s_code          = r'(\{:)([^:]|:[^\}]|[\n])*(:\})'
-s_sect          = r'(\{%)(.|[\n])*(%\})'
+s_code          = r'(\{-)([^-]|-[^\}])*(-\})'
+s_code2         = r'(\{-)([^:]|:[^\}]|[\n])*(-\})'
+# s_sect          = r'(\{%)(.|[\n])*(%\})'
+s_sect          = r'(\{%)([^%]|%[^\}])*(%\})'
 s_equals        = r'='
 
-# To iterate over
-pattern_strs = [s_ws, s_comment, s_str, s_class, s_name, s_code, s_sect,
-     s_equals]
+r_ws       = re.compile(s_ws)
+r_comment  = re.compile(s_comment)
+r_str      = re.compile(s_str)
+r_class    = re.compile(s_class)
+r_name     = re.compile(s_name)
+r_code     = re.compile(s_code)
+r_code2    = re.compile(s_code2)
+r_sect     = re.compile(s_sect)
+r_equals   = re.compile(s_equals)
+
+
 
 # To generate group names
 str_names   = { s_ws            : 's_ws'
@@ -35,16 +44,26 @@ str_names   = { s_ws            : 's_ws'
               , s_equals        : 's_equals'
               }
 
-token_map = { 's_ws'            : None
-            , 's_comment'       : None
-            , 's_str'           : StringToken
-            , 's_class'         : ClassToken
-            , 's_name'          : NameToken
-            , 's_code'          : CodeToken
-            , 's_sect'          : SectionToken
-            , 's_equals'        : EqToken
+token_map = { s_ws            : None
+            , s_comment       : None
+            , s_str           : StringToken
+            , s_class         : ClassToken
+            , s_name          : NameToken
+            , s_code          : CodeToken
+            , s_sect          : SectionToken
+            , s_equals        : EqToken
             }
 
+pattern_token_map = { 
+              r_ws            : None
+            , r_comment       : None
+            , r_str           : StringToken
+            , r_class         : ClassToken
+            , r_name          : NameToken
+            , r_code          : CodeToken
+            , r_sect          : SectionToken
+            , r_equals        : EqToken
+            }
 
 class LexLuthor(Lexer):
     ''' 
@@ -58,15 +77,6 @@ class LexLuthor(Lexer):
         if DEBUG:
             info("Initializing LexLuthor...")
         self._program = program
-
-        # XXX: Not sure what this does; reeks of some stack overflow shit
-        # For now, to get this working we are going to just make an if/elif
-        # check to look through all the different regex patterns. This is
-        # inefficient but is easier to reason about.
-        blank_pattern = r'(?P<{0}>^{1})'
-        self._meta_pattern  = re.compile('|'.join( 
-            [blank_pattern.format( str_names[s], s) for s in pattern_strs]))
-        self._groupindex = self._meta_pattern.groupindex
         self._queue = []
 
         if DEBUG:
@@ -75,7 +85,6 @@ class LexLuthor(Lexer):
     def __iter__(self):
         program = str(self._program)
 
-        groupindex = self._groupindex     # XXX: What is this??
         info("Creating LexLuthor iter")
         while program:
             if DEBUG:
@@ -86,26 +95,85 @@ class LexLuthor(Lexer):
                     success("LexLuthor.__iter__(): _queue non-empty, yielding {}".format(result), ind = 2)
                 yield result
 
-            match = self._meta_pattern.match(program)
-            if match == None:
-                raise SyntaxError(
-                    error("LexLuthor.__iter__: No Match in '{}'.".format(
-                        program[:min(40,len(program))])), 1)
-            if DEBUG:
-                info("LexLuthor.__iter__(): matched '{}'".format(match.group(0)), 1)
+            # Check for pattern match
+            pattern, match = None, None   # Default Values
+            if r_comment.match(program):
+                pattern = s_comment
+                match = r_comment.match(program)
+                if DEBUG:
+                    success("Found COMMENT")
+            elif r_str.match(program):
+                pattern = s_str
+                match = r_str.match(program)
+                if DEBUG:
+                    success("Found STRING")
+            elif r_class.match(program):
+                pattern = s_class
+                match = r_class.match(program)
+                if DEBUG:
+                    success("Found CLASS")
+            elif r_name.match(program):
+                pattern = s_name
+                match = r_name.match(program)
+                if DEBUG:
+                    success("Found NAME")
+            elif r_code.match(program):
+                pattern = s_code
+                match = r_code.match(program)
+                if DEBUG:
+                    success("Found CODE")
+            elif r_code2.match(program):
+                pattern = s_code2
+                match = r_code2.match(program)
+                if DEBUG:
+                    success("Found CODE2")
+            elif r_sect.match(program):
+                pattern = s_sect
+                match = r_sect.match(program)
+                if DEBUG:
+                    success("Found SECTION")
+            elif r_equals.match(program):
+                pattern = s_equals
+                match = r_equals.match(program)
+                if DEBUG:
+                    success("Found EQUALS")
+            elif r_ws.match(program):
+                pattern = s_ws
+                match = r_ws.match(program)
+                if DEBUG:
+                    success("Found WHITESPACE")
+            else:
+                error("Couldn't find a match!")
+
+            # s = ''
+            # while s.strip() != 'q':
+            #     s = input('>>> ').rstrip()
+            #     if s == 'q':
+            #         break
+            #     exec(s)
+
+            token_constructor = token_map[pattern]   # Grab token constructor to output
             start, end = match.span()
-            program = program[end:]
-            for i in groupindex:
-                if match.group(i) != None:
-                    val = match.group(i)
-                    token_type = token_map[i]
-                    if token_type != None:
-                        token = token_map[i](val)
-                        if DEBUG:
-                            success("LexLuthor __iter__: lexed and yielding {}".format(token),ind =2)
-                        yield token
+
             if DEBUG:
-                info("LexLuthor __iter__: Bottom of while", 1)
+                info("match start = {}, match end = {}".format(start, end))
+                info("match string = {}".format(program[start: end]))
+
+            program = program[end:]
+
+            if token_constructor != None:
+                # TODO: Error check?
+                value = match.group(0)
+                token = token_constructor(value)
+                if DEBUG:
+                    if '\n' in value:
+                        info("value:\n\"{}\"".format(value))
+                    info("value: {}".format(value))
+                    success("LexLuthor __iter__: lexed and yielding {}".format(token),ind =2)
+                yield token
+            else:
+                if DEBUG:
+                    info("Program:\n{}\n{}\n{}\n".format('v'*78, program, '^'*78))
 
     def putback(self, val):
         '''

@@ -12,17 +12,19 @@ class MetaToken(object):
         self.type = None
         self.value = value
     def __repr__(self):
-        return "TOKEN<{},'{}'>".format(self.type, self.value)
+        return "{}[{}]".format(self.type, self.value)
 
 class StringToken(MetaToken):
     def __init__(self, value):
         self.value = value
-        self.type = 'STRING'
+        self.type = 'StringMetaToken'
+    def __repr__(self):
+        return "{}[\"{}...\"]".format(self.type, self.value[:min(12, len(self.value))])
 
 class IntToken(MetaToken):
     def __init__(self, value):
         self.value = value
-        self.type = 'INT'
+        self.type = 'IntMetaToken'
 
 class CodeToken(MetaToken):
     def __init__(self, value):
@@ -37,17 +39,20 @@ class CodeToken(MetaToken):
             # TODO: Make more expressive
             print("Lex error", e)
         self.value = value
-        self.type = 'CODE'
+        self.type = 'CodeMetaToken'
+    def __repr__(self):
+        output = self.value[ : min(32, len(self.value), self.value.index('\n'))]
+        return "{}[\"{}...\"]".format( self.type, output)
 
 class ClassToken(MetaToken):
     def __init__(self, value):
         self.value = value
-        self.type = 'CLASS'
+        self.type = 'ClassMetaToken'
 
 class NameToken(MetaToken):
     def __init__(self, value):
         self.value = value
-        self.type = 'NAME'
+        self.type = 'NameMetaToken'
 
 
 class SectionToken(MetaToken):
@@ -63,10 +68,13 @@ class SectionToken(MetaToken):
             print("Lex error", e)
 
         self.value = value
-        self.type = "SECTION"
+        self.type = "SectMetaToken"
+    def __repr__(self):
+        output = self.value[ : min(32, len(self.value), self.value.index('\n'))]
+        return "{}[\"{}...\"]".format( self.type, output)
 
 class EqToken(MetaToken):
     def __init__(self, value = '='):
         self.value = value
-        self.type = "EQUALS"
+        self.type = "EqualsMetaToken"
 
