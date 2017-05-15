@@ -6,8 +6,9 @@ from cup.lexer.metatoken import ( MetaToken, StringToken, IntToken, CodeToken,
                                  ClassToken, NameToken, SectionToken,
                                  EqToken)
 from cup.utils.helper import accumulator, error, failure, success, info
+from math import gcd
 
-DEBUG = True                # For debug. Duh
+DEBUG = False
 
 # For parsing lex file
 s_ws            = r'(\s)+'
@@ -85,7 +86,8 @@ class LexLuthor(Lexer):
     def __iter__(self):
         program = str(self._program)
 
-        info("Creating LexLuthor iter")
+        if DEBUG:
+            info("Creating LexLuthor iter")
         while program:
             if DEBUG:
                 info("LexLuthor.__iter__(): looking for next symbol",1)
@@ -145,13 +147,6 @@ class LexLuthor(Lexer):
             else:
                 error("Couldn't find a match!")
 
-            # s = ''
-            # while s.strip() != 'q':
-            #     s = input('>>> ').rstrip()
-            #     if s == 'q':
-            #         break
-            #     exec(s)
-
             token_constructor = token_map[pattern]   # Grab token constructor to output
             start, end = match.span()
 
@@ -182,49 +177,138 @@ class LexLuthor(Lexer):
         token immediately. We then put that token back and deal with the input
         that we have.
         '''
+        # XXX: Queue should be a stack
         self._queue.append(val)
 
     def lex(self):
         # TODO: Conform to Lexer class
         pass
-        
-class MatchEntry(object):
-    counter = accumulator(0)
-    _entries = []             # Hold all MatchEntries
-    def __init__(self, token, code = None):
-        '''
-        patern: regex pattern to match on
-        code: code to execute on match
-        '''
-        self.code       = code
-        self.num        = next(self.counter)
-        self.name = 'e{}'.format(self.num)
-        if token.type == 'STRING':
-            self.pattern = '(?<{}>{})'.format(self.name, token.value)
-        elif token.type == 'NAME':
-            # This should output '(?<name>' + varname + ')'
-            self.pattern = "'(?<{}>' + str({}) + ')'".format(self.name,
-            token.value)
 
-        self._entries.append(self)    # For iterating over later
+class LuthorREPattern(object):
+    ''' Represents a Luthor Regular Expression and the associated code to be
+    executed.'''
+    def __init__(self, name, pattern, code):
+        self.name    = name
+        self.pattern = pattern
+        self.code    = code
+    def __repr__(self):
+        return '<LuthorREPattern {} {}>'.format(self.name, self.pattern)
 
-    @staticmethod
-    def iterator():
-        return iter(MatchEntry._entries)
+class CodeSegment(object):
+    '''This class represents a piece of code that is tied to some action of the
+    lexer. This can be used for a SectionToken or for a CodeToken. A raw string
+    of Python code is passed and parsed/reformatted so that it can be easily
+    modified as needed.'''
 
-    def __hash__(self):
-        return self.num
-
-    def __eq__(self, other):
-        ''' Checks that these are logically equivalent (not same instance) '''
-        return self.pattern == other.pattern and self.code == other.code
-
-    def __ne__(self, other):
-        return self.code != other.code or self.pattern != other.pattern
+    def __init__(self, code, indent_str = ' '):
+        self._raw = code
+        self.indent_str = indent_str
+        lines = list(filter(lambda x: x.strip() != '', code.split('\n')))
+        stack = []
+        indents = []
+        raw_indents = [len(line) - len(line.lstrip()) for line in lines]
+        # Set up line[0]
+        if code.strip():
+            stack.append(raw_indents[0]) # TODO: check zero length
+            indents.append(0)
+            for i in raw_indents[1:]:
+                if len(stack) < 1:
+                    raise RuntimeError("Indentation error: " + line)
+                if i == stack[-1]:
+                    indents.append(len(stack) - 1)
+                elif i > stack[-1]:
+                    stack.append(i)
+                    indents.append(len(stack) - 1)
+                else:
+                    while stack and stack[-1] > i:
+                        stack.pop()
+                    if stack == []:
+                        raise RuntimeError("Illegal Indentation") # TODO: More info
+                    if stack[-1] != i:
+                        raise RuntimeError("Illegal Indentation") # TODO: More info
+                    indents.append(len(stack) - 1)
+                if DEBUG:
+                    info(str(indents) +  str(stack))
+        self._indents = indents
+        self._lines   = lines
+        self._zipped  = list(zip(indents, map(lambda s : s.lstrip(), lines)))
 
     def __str__(self):
-        return self.pattern
+        return '\n'.join( [(i * self.indent_str) + l for i,l in self._zipped] )
+    def __repr__(self):
+        return "<{} @{}>".format("CodeSegment object", hex(id(self)))
 
+class LuthorFile(object):
+    '''Represent a luthor file. Calls into a LexLuthor class and parses the
+    output.'''
+    def __init__(self, program):
+        self.program = program
+
+    def parse(self):
+        ''' Parse a stream of tokens  '''
+        self.lexluthor = LexLuthor(self.program)
+        self.patterns  = []
+        self.setup = CodeSegment('')
+        self.teardown = CodeSegment('')
+        tokens = list(self.lexluthor)
+        name, pattern, code = None, None, None
+        state = 'start'
+
+        # XXX: This is a MacGyvered State Machine
+        print(tokens)
+        while tokens:
+            token = tokens.pop(0)
+            info('state = {}'.format(state))
+            info('token = {}'.format(token))
+            if state == 'start':
+                if isinstance(token, SectionToken):
+                    self.setup = CodeSegment(token.value)
+                    state = 'seen-code'
+                elif isinstance(token, NameToken):
+                    name  = token.value
+                    state = 'seen-name'
+                else:
+                    state = 'error'
+
+            elif state == 'seen-code':
+                if name is not None: # If we just saw a section name will be None
+                    self.patterns.append( LuthorREPattern(name, pattern, code) )
+                    name, pattern, code = None, None, None
+                if isinstance(token, SectionToken):
+                    self.teardown = CodeSegment(token.value)
+                elif isinstance(token, NameToken):
+                    name = token.value
+                    state = 'seen-name'
+                else:
+                    state = 'error'
+
+            elif state == 'seen-name':
+                if isinstance(token, StringToken):
+                    pattern = token.value
+                    state = 'seen-pattern'
+                else:
+                    state = 'error'
+
+            elif state == 'seen-pattern':
+                if isinstance(token, CodeToken):
+                    code = CodeSegment(token.value)
+                    state = 'seen-code'
+                elif isinstance(token, SectionToken):
+                    state = 'seen-section'
+                    self.patterns.append(LuthorREPattern(name, pattern, CodeSegment('')))
+                    name, pattern, code = None, None, None
+                    self.teardown = CodeSegment(token.value)
+                else:
+                    state = 'error'
+
+            elif state == 'error':
+                raise RuntimeError("Unexpected token: {}".format(token))
+                
+        pattern = LuthorREPattern(name, pattern, code)
+        self.patterns.append(pattern)
+        print(self.setup)
+        print(self.patterns)
+        print(self.teardown)
 
 class LexerGenerator(object):
     ''' 

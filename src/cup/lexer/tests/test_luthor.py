@@ -1,5 +1,5 @@
 import unittest
-from cup.lexer.luthor import LexLuthor
+from cup.lexer.luthor import LexLuthor, CodeSegment, LuthorFile
 from cup.lexer.metatoken import (StringToken, IntToken, CodeToken, ClassToken,
                                  NameToken, SectionToken, EqToken)
 
@@ -40,18 +40,83 @@ ws_pattern "\s"
 %}
 '''
 
+goodcode1 = '''x = 1
+y = 2
+if x == 1:
+    y = 3
+'''
+
+goodcode2 = '''
+for i in range(10):
+    for j in range(10);
+        print (i,j)
+for i in range(10):
+    for j in range(10):
+        print (j,i)
+'''
+
+goodcode3 = '''
+x = 2
+if x == 2:
+    print(x)
+    y = x ** 3
+    if y < 100:
+        x = 1
+        if x == 2 or y < 11:
+            print ("Hello world!!!")
+    for i in range(100):
+        print("This is a test")
+        for j in range(100):
+            pass
+        pass
+else:
+    print("Nope!")
+
+'''
+
+goodcode4 = '''
+
+x = 1
+y = 0
+for i in range(100):
+    x += i
+
+    if x % 3 == 0:
+        y += 1
+
+for i in range(100):
+    
+
+
+
+    x += i
+    if x % 2 == 0:
+      y += 2
+      if y > i:
+                                print("This is an indentation test")
+      print("Success!")
+'''
+
+badcode1 = '''if True:
+    if True:
+        print("True")
+      print("This should fail!!!")
+    else:
+        print("This should never be reached!")
+'''
+
 class TestLuthor(unittest.TestCase):
     def test_constructor(self):
         luthor = LexLuthor(p1)
-        self.assertEqual(luthor._program, p)
+        self.assertEqual(luthor._program, p1)
 
-    def test_tokenLength1(self):
+    def test_token_length_1(self):
         luthor = LexLuthor(p1)
         expect = [SectionToken, NameToken, StringToken, CodeToken]
         actual = list(iter(luthor))
         self.assertEqual(len(expect), len(actual))
 
-    def test_tokenLength2(self):
+    def test_token_length_2(self):
         luthor = LexLuthor(p2)
         expect = [SectionToken, NameToken, StringToken, CodeToken, 
                                 NameToken, StringToken, CodeToken,
@@ -59,20 +124,61 @@ class TestLuthor(unittest.TestCase):
         actual = list(iter(luthor))
         self.assertEqual(len(expect), len(actual))
 
-    def test_tokenTypes1(self):
+    def test_token_types_1(self):
         luthor = LexLuthor(p1)
         expect = [SectionToken, NameToken, StringToken, CodeToken]
         actual = list(iter(luthor))
         for e, a in zip(expect, actual):
             self.assertTrue(isinstance(a,e))
 
-    def test_tokenTypes2(self):
+    def test_token_types_2(self):
         luthor = LexLuthor(p2)
+        actual = list(iter(luthor))
         expect = [SectionToken, NameToken, StringToken, CodeToken, 
                                 NameToken, StringToken, CodeToken,
-                                NameToken, StringToken, CodeToken]
-        actual = list(iter(luthor))
-        for i,a in enumerate(actual):
-            print(i,a)
+                                NameToken, StringToken, SectionToken]
+        for a,e in zip(actual, expect):
+            self.assertTrue(isinstance(a,e), '{} is not an instance of {}'.format(a, e))
 
+    def test_code_segment_indentation_1(self):
+        cs = CodeSegment(goodcode1)
+        actuals  = cs._indents
+        expected = [0,0,0,1]
+        for a,e in zip(actuals, expected):
+            self.assertEqual(a, e)
+
+    def test_code_segment_indentation_2(self):
+        cs = CodeSegment(goodcode2)
+        actuals  = cs._indents
+        expected = [0,1,2,0,1,2]
+        for a,e in zip(actuals, expected):
+            self.assertEqual(a, e)
+
+    def test_code_segment_indentation_3(self):
+        cs = CodeSegment(goodcode3)
+        actuals  = cs._indents
+        expected = [0,0,1,1,1,2,2,3,1,2,2,3,2,0,1]
+        for a,e in zip(actuals, expected):
+            self.assertEqual(a, e)
+
+    
+    def test_code_segment_indentation_4(self):
+        cs = CodeSegment(goodcode4)
+        actuals  = cs._indents
+        expected = [0,0,0, 1, 1, 2, 0, 1, 1, 2, 2, 3, 2]
+        for a,e in zip(actuals, expected):
+            self.assertEqual(a, e)
+
+    def test_code_segment_indentation_5(self):
+        def make_codeseg():
+            return CodeSegment(badcode1)
+        self.assertRaises(RuntimeError, make_codeseg)
+
+    def test_luthor_file_1(self):
+        lfile = LuthorFile(p1)
+        lfile.parse()
+
+    def test_luthor_file_2(self):
+        lfile = LuthorFile(p2)
+        lfile.parse()
 

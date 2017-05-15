@@ -29,15 +29,15 @@ class IntToken(MetaToken):
 class CodeToken(MetaToken):
     def __init__(self, value):
         try:
-            value = value[2:-2]         # Strip leading delimiter
             index = value.index('-}')   # Get index of trailing delimiter
+            value = value[2:index]      # Strip leading delimiter
             value = value[:index]       # Strip trailing delimiter
             # TODO: Inefficient
             while value and value[0] in (' \t\n\r'): # Strip leading whitespace
                 value = value[1:]
         except Exception as e:
             # TODO: Make more expressive
-            print("Lex error", e)
+            print("Lex error:", e)
         self.value = value
         self.type = 'CodeMetaToken'
     def __repr__(self):
