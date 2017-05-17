@@ -32,9 +32,8 @@ class CodeToken(MetaToken):
             index = value.index('-}')   # Get index of trailing delimiter
             value = value[2:index]      # Strip leading delimiter
             value = value[:index]       # Strip trailing delimiter
-            # TODO: Inefficient
-            while value and value[0] in (' \t\n\r'): # Strip leading whitespace
-                value = value[1:]
+            # XXX: Removed an lstrip - this looked to be a bug but it may come
+            # back to haunt us! Just a warning!
         except Exception as e:
             # TODO: Make more expressive
             print("Lex error:", e)
@@ -62,7 +61,8 @@ class SectionToken(MetaToken):
             value = value[2:]           # Strip leading delimiter
             index = value.index('%}')   # Get index of trailing delimiter
             value = value[:index]       # Strip trailing delimiter
-            value = value.lstrip()      # Get rid of leading white space
+            # XXX: Removed an lstrip - this looked to be a bug but it may come
+            # back to haunt us! Just a warning!
         except Exception as e:
             # TODO: Make more expressive
             print("Lex error", e)

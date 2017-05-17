@@ -35,8 +35,9 @@ str_pattern "([\"]|[^\"])+"
 
 ws_pattern "\s"
 
-{%  # Program Suffix
-    print "Total tokens matched: {}".format(tokens_matched)
+{%  
+    # Program Suffix
+    print( "Total tokens matched: {}".format(tokens_matched))
 %}
 '''
 
@@ -177,8 +178,12 @@ class TestLuthor(unittest.TestCase):
     def test_luthor_file_1(self):
         lfile = LuthorFile(p1)
         lfile.parse()
+        lfile._print()
+        # TODO: Write tests
 
     def test_luthor_file_2(self):
         lfile = LuthorFile(p2)
         lfile.parse()
+        lfile._print()
+        # TODO: Write tests
 

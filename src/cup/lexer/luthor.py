@@ -18,7 +18,6 @@ s_class         = r'[A-Z]\w*'
 s_name          = r'[a-z]\w*'
 s_code          = r'(\{-)([^-]|-[^\}])*(-\})'
 s_code2         = r'(\{-)([^:]|:[^\}]|[\n])*(-\})'
-# s_sect          = r'(\{%)(.|[\n])*(%\})'
 s_sect          = r'(\{%)([^%]|%[^\}])*(%\})'
 s_equals        = r'='
 
@@ -203,13 +202,26 @@ class CodeSegment(object):
     def __init__(self, code, indent_str = ' '):
         self._raw = code
         self.indent_str = indent_str
+        # The following get initialized in normalize_indents()
+        self._indents = None
+        self._lines   = None
+        self._zipped  = None
+        self.normalize_indents()
+
+    def normalize_indents(self):
+        # lines stores the list of of nonempty lines
+        # TODO: strip comments
+        code = self._raw
         lines = list(filter(lambda x: x.strip() != '', code.split('\n')))
+        # stack stores information on the indent levels we have seen
         stack = []
+        # indents is a list of normalized indentation levels. These are stored
+        # as ints, where each indentation is stored as an incrementation by 1
         indents = []
         raw_indents = [len(line) - len(line.lstrip()) for line in lines]
         # Set up line[0]
         if code.strip():
-            stack.append(raw_indents[0]) # TODO: check zero length
+            stack.append(raw_indents[0])
             indents.append(0)
             for i in raw_indents[1:]:
                 if len(stack) < 1:
@@ -233,6 +245,8 @@ class CodeSegment(object):
         self._lines   = lines
         self._zipped  = list(zip(indents, map(lambda s : s.lstrip(), lines)))
 
+    def indent(self, depth = 1):
+        return '\n'.join( [((i + depth) * self.indent_str) + l for i,l in self._zipped] )
     def __str__(self):
         return '\n'.join( [(i * self.indent_str) + l for i,l in self._zipped] )
     def __repr__(self):
@@ -306,9 +320,17 @@ class LuthorFile(object):
                 
         pattern = LuthorREPattern(name, pattern, code)
         self.patterns.append(pattern)
-        print(self.setup)
-        print(self.patterns)
-        print(self.teardown)
+    def _print(self):
+        print("="*80)
+        print("Luthor File Stdout Dump")
+        print("="*80)
+        print("Setup:")
+        print(self.setup.indent(2))
+        print("Patterns:")
+        for pattern in self.patterns:
+            print(pattern)
+        print("Teardown:")
+        print(self.teardown.indent(2))
 
 class LexerGenerator(object):
     ''' 
@@ -395,7 +417,7 @@ class LexerGenerator(object):
 
 # FOR DEBUG
 def newluthor():
-    print("New luthor being generated...")
+    info("New luthor being generated...")
     with open("test/luthor/test.luth") as f:
         program = f.read()
     luthor = LexLuthor(program)
