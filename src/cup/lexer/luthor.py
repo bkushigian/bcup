@@ -187,11 +187,20 @@ class LuthorREPattern(object):
     ''' Represents a Luthor Regular Expression and the associated code to be
     executed.'''
     def __init__(self, name, pattern, code):
+        '''
+        name : string literal of the pattern name
+        pattern : regex to be matched
+        code : CodeSegment instance
+        '''
         self.name    = name
         self.pattern = pattern
         self.code    = code
     def __repr__(self):
         return '<LuthorREPattern {} {}>'.format(self.name, self.pattern)
+    def __eq__(self, other):
+        return self.name == other.name and self.pattern == other.pattern and self.code == other.code
+    def __neq__(self, other):
+        return not self.__eq__(other)
 
 class CodeSegment(object):
     '''This class represents a piece of code that is tied to some action of the
@@ -251,29 +260,36 @@ class CodeSegment(object):
         return '\n'.join( [(i * self.indent_str) + l for i,l in self._zipped] )
     def __repr__(self):
         return "<{} @{}>".format("CodeSegment object", hex(id(self)))
+    def __eq__(self, other):
+
+        if len(self._zipped) != len(other._zipped): return False
+        for (i, lself), (j, lother) in zip(self._zipped, other._zipped):
+            if i != j or lself.strip() != lother.strip(): return False
+        return True
+
+    def __neq__(self, other):
+        return not self.__eq__(other)
+
 
 class LuthorFile(object):
     '''Represent a luthor file. Calls into a LexLuthor class and parses the
     output.'''
     def __init__(self, program):
         self.program = program
+        self.patterns = []
+        self.setup    = CodeSegment('')
+        self.teardown = CodeSegment('')
 
     def parse(self):
         ''' Parse a stream of tokens  '''
         self.lexluthor = LexLuthor(self.program)
-        self.patterns  = []
-        self.setup = CodeSegment('')
-        self.teardown = CodeSegment('')
         tokens = list(self.lexluthor)
         name, pattern, code = None, None, None
         state = 'start'
 
         # XXX: This is a MacGyvered State Machine
-        print(tokens)
         while tokens:
             token = tokens.pop(0)
-            info('state = {}'.format(state))
-            info('token = {}'.format(token))
             if state == 'start':
                 if isinstance(token, SectionToken):
                     self.setup = CodeSegment(token.value)
@@ -309,8 +325,9 @@ class LuthorFile(object):
                     state = 'seen-code'
                 elif isinstance(token, SectionToken):
                     state = 'seen-section'
-                    self.patterns.append(LuthorREPattern(name, pattern, CodeSegment('')))
-                    name, pattern, code = None, None, None
+                    if name is not None or pattern is not None or code is not None:
+                        self.patterns.append(LuthorREPattern(name, pattern, CodeSegment('')))
+                        name, pattern, code = None, None, None
                     self.teardown = CodeSegment(token.value)
                 else:
                     state = 'error'
@@ -318,8 +335,9 @@ class LuthorFile(object):
             elif state == 'error':
                 raise RuntimeError("Unexpected token: {}".format(token))
                 
-        pattern = LuthorREPattern(name, pattern, code)
-        self.patterns.append(pattern)
+        if name is not None or pattern is not None or code is not None:
+            pattern = LuthorREPattern(name, pattern, code)
+            self.patterns.append(pattern)
     def _print(self):
         print("="*80)
         print("Luthor File Stdout Dump")

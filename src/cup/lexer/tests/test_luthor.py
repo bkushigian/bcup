@@ -1,9 +1,9 @@
 import unittest
-from cup.lexer.luthor import LexLuthor, CodeSegment, LuthorFile
+from cup.lexer.luthor import LexLuthor, CodeSegment, LuthorFile, LuthorREPattern
 from cup.lexer.metatoken import (StringToken, IntToken, CodeToken, ClassToken,
                                  NameToken, SectionToken, EqToken)
 
-p1 = '''
+p1 = r'''
 {%
     tokens_matched = 0
 %}
@@ -175,15 +175,140 @@ class TestLuthor(unittest.TestCase):
             return CodeSegment(badcode1)
         self.assertRaises(RuntimeError, make_codeseg)
 
-    def test_luthor_file_1(self):
+    def test_luthorFile1_setup(self):
         lfile = LuthorFile(p1)
         lfile.parse()
-        lfile._print()
-        # TODO: Write tests
 
-    def test_luthor_file_2(self):
+        expected_setup = CodeSegment('''tokens_matched = 0''')
+        actual_setup   = lfile.setup
+
+        self.assertEqual(actual_setup, expected_setup)
+
+    def test_luthorFile1_teardown(self):
+        lfile = LuthorFile(p1)
+        lfile.parse()
+
+        expected_teardown = CodeSegment('')
+        actual_teardown   = lfile.teardown
+
+        self.assertEqual(actual_teardown, expected_teardown)
+
+
+    def test_luthorFile1_patterns1(self):
+        lfile = LuthorFile(p1)
+        lfile.parse()
+
+        expected_patterns = [LuthorREPattern('int_pattern', r'''\d+''',
+        CodeSegment(''' 
+        RESULT = IntToken(MATCHED)
+        tokens_matched += 1'''))]
+        actual_patterns   = lfile.patterns
+
+        self.assertEqual(len(actual_patterns), len(expected_patterns))
+
+    def test_luthorFile1_patterns2(self):
+        lfile = LuthorFile(p1)
+        lfile.parse()
+
+        expected_patterns = [LuthorREPattern('int_pattern', r'''\d+''',
+        CodeSegment(''' 
+        RESULT = IntToken(MATCHED)
+        tokens_matched += 1'''))]
+        actual_patterns   = lfile.patterns
+
+        for exp, act in zip(expected_patterns, actual_patterns):
+            self.assertEqual(act, exp, 
+"""
+'{}' == '{}': {}, 
+'{}' == '{}': {},
+'{}' == '{}': {}""".format( act.name, exp.name, act.name == exp.name, 
+                        act.pattern, exp.pattern, act.pattern == exp.pattern, 
+                        act.code, exp.code, act.code == exp.code))
+
+    def test_luthorFile2_setup(self):
         lfile = LuthorFile(p2)
         lfile.parse()
-        lfile._print()
-        # TODO: Write tests
+
+        expected_setup = CodeSegment('''
+            # GLOBAL CONFIGURATION 
+            tokens_matched  = 0    # A normal python variable
+            ''')
+
+        actual_setup   = lfile.setup
+
+        self.assertEqual(actual_setup, expected_setup)
+
+    def test_luthorFile2_teardown(self):
+        lfile = LuthorFile(p2)
+        lfile.parse()
+
+        expected_teardown = CodeSegment('''
+            # Program Suffix
+            print( "Total tokens matched: {}".format(tokens_matched))''')
+        actual_teardown   = lfile.teardown
+
+        self.assertEqual(actual_teardown, expected_teardown)
+
+
+    def test_luthorFile2_patterns1(self):
+        lfile = LuthorFile(p2)
+        lfile.parse()
+
+        expected_patterns = [
+            LuthorREPattern('int_pattern', r'''\d+''',
+                CodeSegment(''' 
+                    RESULT = IntToken(MATCHED)
+                    tokens_matched += 1''')
+            ),
+            LuthorREPattern('str_pattern', r'''([\"]|[^\"])+''',
+                CodeSegment('''
+                    RESULT = StrToken(MATCHED)
+                    tokens_matched += 1
+                ''')
+            ),
+            LuthorREPattern('ws_pattern', r'''\s''', None)
+            ]
+        actual_patterns   = lfile.patterns
+
+        self.assertEqual(len(actual_patterns), len(expected_patterns))
+
+    def test_luthorFile2_patterns2(self):
+        lfile = LuthorFile(p2)
+        lfile.parse()
+
+        expected_patterns = [LuthorREPattern('int_pattern', r'''\d+''',
+        CodeSegment(''' 
+        RESULT = IntToken(MATCHED)
+        tokens_matched += 1'''))]
+        actual_patterns   = lfile.patterns
+
+        for exp, act in zip(expected_patterns, actual_patterns):
+            self.assertEqual(act, exp, 
+"""
+'{}' == '{}': {}, 
+'{}' == '{}': {},
+'{}' == '{}': {}""".format( act.name, exp.name, act.name == exp.name, 
+                        act.pattern, exp.pattern, act.pattern == exp.pattern, 
+                        act.code, exp.code, act.code == exp.code))
+
+    def test_LuthorREPattern__eq__1(self):
+        rep1 = LuthorREPattern('testname', 'testpattern', CodeSegment(''))
+        self.assertEqual(rep1, rep1)
+
+    def test_LuthorREPattern__eq__2(self):
+        rep1 = LuthorREPattern('testname', 'testpattern', CodeSegment(''))
+        rep2 = LuthorREPattern('testname', 'testpattern', CodeSegment(''))
+        self.assertEqual(rep1, rep2)
+
+    def test_LuthorREPattern__eq__3(self):
+        rep1 = LuthorREPattern('testname', 'testpattern', CodeSegment(
+        '''
+for i in range(10):
+    print(i)
+'''))
+        rep2 = LuthorREPattern('testname', 'testpattern', CodeSegment('''
+        
+    for i in range(10):
+        print(i)'''))
+        self.assertEqual(rep1, rep2)
 

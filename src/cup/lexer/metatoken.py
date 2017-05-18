@@ -16,6 +16,8 @@ class MetaToken(object):
 
 class StringToken(MetaToken):
     def __init__(self, value):
+        if value and value[0] == value[-1] and value[0] == '"':
+            value = value[1:-1]
         self.value = value
         self.type = 'StringMetaToken'
     def __repr__(self):
