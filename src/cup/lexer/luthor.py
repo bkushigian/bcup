@@ -354,84 +354,21 @@ class LexerGenerator(object):
     ''' 
     Generate a lexer given an input file.
     '''
-    def __init__(self, lexfile, tokenfilepath):
+    def __init__(self, luthor, tokenfile):
         '''
-        lexfile: file with lex specs
-        tokenfile: file with token code, created by user
+        luthor: luthor file (on disk, not LuthorFile instance) to create a lexer
+        from.
+        tokenfile: file to import in the generated lexer
         '''
-        self.lexfile       = lexfile
-        self.tokenfile     = tokenfilepath
-        with open(lexfile) as f:
-            lexstr = f.read()
-        self.lexer = LexLuthor(lexstr)
+        self.luth = luthor
+    def generate(self, output, py_version = '3'):
+        '''output: where to store the output python file'''
+        if py_version != '3':
+            error("Aw crap, we can only generate Python3 Code! Proceding anyways")
+            py_version = '3'
+        # First, creat prefix
+        luthorfile = LuthorFile
 
-        self.sections = []  
-        self.patterns = []
-
-
-    def build_lexer(self):
-        ''' Build the actual lexer '''
-
-        # ordering is a list of items to write to lex.py. It consists of string
-        # literals and MatchEntry items. Each MatchEntry item should have a name
-        # associated with it, arbitrarily generated. 
-        ordering = self.parse()
-        entryDict = {}
-        nameCounter = accumulator(0)
-        def newName():
-            ''' Give unique names for each entry '''
-            return 'e{}'.format(next(nameCounter))
-
-        def processEntry(me):
-            ''' Process a match entry, forming a regex string '''
-            name = newName()
-            pattern = '(?<{}>{})'.format(name, me.pattern)
-
-        result = ''   # Store the string that will be written to lex.py
-
-
-        for e in ordering:   
-            if isinstance(e, MatchEntry):
-                print('Match Entry:', e, e.code)
-                
-
-
-
-    def parse(self):
-        ''' 
-        We need to translate the luthor file into a lexer. To do this we
-        need to construct an ordering on the input and wrap the appropriate
-        parts of the luthor file (such as creating functions for setup,
-        teardown, etc)
-
-        returns a list of items to write to lex.py
-        '''
-
-        lexer = self.lexer      # This will be used for the putback method
-        lexiter = iter(lexer)   # Iterate through the lexer
-        ordering = []           # Hold constructed objects to be transformed
-        current  = []
-        # Construct ordering
-        for token in lexiter:
-            if token.type == 'SECTION':
-                ordering.append(token.value)    # Hold the string literal
-
-            elif token.type == 'NAME' or token.type == 'STRING':
-                try:
-                    next_token = next(lexiter)
-                except Exception as e:
-                    ordering.append(MatchEntry(token))
-                    break    # Exit the loop, no more tokens
-
-                input( "NEXT_TOKEN:" + str( next_token))
-                if next_token.type == 'CODE':
-                    ordering.append(MatchEntry(token, next_token))
-
-                else:
-                    ordering.append(MatchEntry(token))
-                    lexer.putback(next_token)
-
-        return ordering
 
 # FOR DEBUG
 def newluthor():
